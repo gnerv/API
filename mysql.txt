@@ -1,0 +1,1019 @@
+linux安装mysql
+
+1、检查是否已安装有mysql（必）
+
+	rpm -qa|grep mysql
+	rpm -qa|grep -i mysql
+
+2、卸载已有的mysql
+
+	rpm -e --nodeps mysql-libs补齐全称（--nodeps 忽略依赖 强制卸载）
+
+3、上传mysql安装文件至 /opt 目录
+
+	MySQL-client-5.5.54-1.linux2.6.x86_64.rpm
+	MySQL-server-5.5.54-1.linux2.6.x86_64.rpm
+
+4、安装客户端
+
+	rpm -ivh MySQL-client-5.5.54-1.linux2.6.x86_64.rpm
+
+5、安装服务端
+
+	rpm -ivh MySQL-server-5.5.54-1.linux2.6.x86_64.rpm
+
+
+6、检查是否安装成功
+
+	mysqladmin --version（出现版本显示即为成功 mysqladmin  Ver 8.42 Distrib 5.5.54, for Linux on x86_64）
+
+	默认参数
+	配置文件位置：/usr/share/mysql/
+	数据文件位置：--datadir=/var/lib/mysql
+	错误日志位置：--log-error=/var/lib/mysql/Legend.err
+
+
+
+8、配置mysql的配置文件
+	
+	复制 /usr/share/mysql/ 下的 my-huge.cnf 文件 至  /etc/ 下 名称修改为 my.cnf
+
+
+
+
+9、字符集配置
+
+	修改  my.cnf 文件 在下列位置添加
+
+	[client]
+
+	#客户端字符集设置为utf8
+	default-character-set=utf8
+
+	[mysqld]
+
+#数据库字符集设置为utf8
+character_set_server=utf8
+character_set_client=utf8
+collation-server=utf8_general_ci
+
+#设置各个数据库分开文件夹存储
+innodb_file_per_table=ON
+
+	[mysql]
+
+#设置数据库字符集utf8
+default-character-set=utf8
+
+
+10、设置mysql数据库是否区分大小写 (1为不区分 0为区分  windows默认不区分  linux默认区分 建议设置为不区分) 可选
+
+	[mysqld]
+#设置不区分大小写
+lower_case_table_names=1 
+
+11、sql_mode(用于设置 sql语句的严格规范) 可选
+
+	show variables like 'sql_mode'; 
+
+
+
+
+11、启动mysql  {start|stop|restart|reload|force-reload|status}
+
+	service mysql start
+
+
+
+
+11.1、设置root用户密码
+
+	mysqladmin -u root password '密码'
+
+
+12、检查mysql数据库字符集
+
+	show variables like '%char%';
+
+
+
+13、创建并设置root可远程登录
+	grant all privileges on *.* to root@'%';
+
+	其他例子：
+	
+	grant select,delete on 数据库名.表名 to username@'连接方式' identified by 'password';
+    
+    grant all privileges on gwlz.* to gwlz@'localhost' identified by 'gwlz';
+	
+	create user gwlz identified by 'gwlz';
+
+	收回权限
+	revoke 权限 on *.* from username@'连接方式';
+
+	修改当前连接用户的密码
+	set password=password('');
+	修改某个用户的密码
+	update mysql.user set password=password('') where user = '' and host='%|localhost';
+	刷新 使密码生效
+	flush privileges
+
+
+
+
+
+
+
+14、设置mysql服务自启动
+	
+	查看系统服务  chkconfig 
+
+	设置mysql服务自启动  chkconfig --level 5 mysql on|off
+
+
+
+
+
+
+
+
+
+
+
+
+
+常见问题
+
+无法登陆
+
+1、由于多次启动mysql导致，查询 ps -ef|grep mysql    kill -9 进程号  全部强制结束后 再次启动 
+
+
+sql语句性能分析工具   explain 
+
+explain sql语句
+
+
+
+
+
+
+挂载硬盘至对应目录
+
+1、查看
+lsblk
+2、挂载
+mount /dev/vdb1 /mnt
+3、检查挂载情况
+df -h
+
+4、卸载
+umount /dev/vdb1 
+
+
+
+
+
+
+.安装Oracle jdk
+如果是做安卓开发，使用openjdk可能会有一点问题，你需要使用Oracle JDK，安装方法如下
+方法一：终端依次输入以下命令
+sudo apt-get purge openjdk*
+sudo add-apt-repository ppa:webupd8team/java
+sudo apt-get update
+sudo apt-get install oracle-java7-installer
+
+方法二：自己安装从Oracle的官网上下载的tar.gz,请按自己的情况修改下面的命令
+准备工作
+sudo tar zxvf ./jdk-7-linux-i586.tar.gz -C /usr/lib/jvm
+cd /usr/lib/jvm
+sudo mv jdk1.7.0/ java-7-sun
+修改环境变量
+vim ~/.bashrc 如果想要所有用户都使用Oracle jdk，请改为 vim /etc/profile
+添加以下内容：
+
+export JAVA_HOME=/opt/jdk/jdk1.7
+export JRE_HOME=${JAVA_HOME}/jre
+export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
+export PATH=${JAVA_HOME}/bin:$PATH
+
+保存退出后输入该命令使设置生效：
+source ~/.bashrc （前面使用vim /etc/profile的这里使用 source /etc/profile）
+
+可能你的系统上默认是openjdk，执行以下代码设置为Oracle JDK
+sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-7-sun/bin/java 300
+sudo update-alternatives --install /usr/bin/javac javac /usr/lib/jvm/java-7-sun/bin/javac 300
+sudo update-alternatives --install /usr/bin/jar jar /usr/lib/jvm/java-7-sun/bin/jar 300 sudo update-alternatives --install /usr/bin/javah javah /usr/lib/jvm/java-7-sun/bin/javah 300
+sudo update-alternatives --install /usr/bin/javap javap /usr/lib/jvm/java-7-sun/bin/javap 300
+sudo update-alternatives --config java
+系统会列出当前安装的jdk，请选择你安装Oracle jdk的那个路径前面的数字，安装完成
+
+最后的最后，输入 java -version javac -version来检查是否安装成功
+
+
+
+
+
+
+maven 打包命令：
+打包并放到私服：mvn deploy -Dmaven.test.skip=true
+
+
+打包到本地：mvn clean package install -Dmaven.test.skip=true
+
+
+124上的/root/.m2/repository/com/sinosoft/ 下的 splatform 删掉
+
+
+
+
+php
+
+./configure --prefix=/usr/local/php \
+--with-config-file-scan-dir=/etc/php.d \
+--with-config-file-path=/etc \
+--with-mysql=/usr \
+--with-mysqli=/usr/bin/mysql_config \
+--enable-mbstring \
+--with-freetype-dir \
+--with-jpeg-dir \
+--with-png-dir \
+--with-zlib \
+--with-libxml-dir=/usr \
+--with-openssl \
+-enable-xml \
+--enable-sockets \
+--enable-fpm \
+--with-mcrypt \
+--with-bz2 \
+--with-libdir=lib64
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+deb 文件安装
+	dpkg -i xxx.deb
+	
+deb 文件清除
+	dpkg -r package    //移除一个已经安装的包
+	dpkg -P package    //包括配置文件
+
+
+cp 复制文件
+	cp -r 源目录/文件  目标目录
+
+mkdir 创建文件夹
+	mkdir 文件夹名称
+
+sudo
+
+zip 压缩文件为 zip
+	zip -r xxx.zip
+
+	zip -d xxx.zip xxx.xxx   删除zip压缩文件中的 xxx文件
+
+unzip 解压文件
+	unzip -d 文件夹名称 xxx.zip    解压至制定文件夹
+
+ll
+	列出当前文件夹下面的文件夹和文件
+
+tar 压缩文件为tar格式
+	-c 创建tar压缩文件
+	-z 使用gzip来压缩或者解压文件
+	-x 解压
+	-r  向末尾添加文件
+	-u  更新文件
+	-k  不覆盖已存在的文件
+	-v 报告文件的详细处理信息
+	-f 写在最后 为文件命名
+
+	tar -cf dx.tar *   //全部文件和文件夹
+	tar -cf dx.tar *.*    //全部文件
+	tar -cf dx.tar *.jpg    //全部jpg文件 后缀可修改为对应
+
+	tar -czf xxx.tar.gz *   //将文件压缩为tar后，再用gzip压缩 生成  tar.gz 文件
+ 
+
+tar 解压缩
+	tar -xvf xxx.tar  解压tar
+	tar -xzvf dx.tar.gz    解压tar.gz
+	-gzip   解压.gz   
+
+	tar -xzvf xx.tar.gz -C 文件夹   解压至制定文件夹  需要提前创建文件夹
+
+
+ps 查看进程  //system manager    ubuntu可视化进程管理器
+	ps -A 全部进程
+	ps -u root  指定用户
+	ps -ef 全部进程详细信息和连同命令行
+	
+	ps -ef|grep 进程包含的名称
+
+	kill -9 PID   强制结束进程	
+
+
+
+
+
+//
+timedatectl set-local-rtc true
+
+
+
+
+
+mkdir jre
+cd jre
+ln -s /home/legend/soft/jdk1.7.0_80/bin
+
+
+
+
+
+
+sudo apt-get install -f
+
+
+
+
+		<!-- 上面的无法连接 则使用下面这个 阿里云的maven库 -->
+ 	    <mirror>
+	        <id>nexus-aliyun</id>
+	        <mirrorOf>*</mirrorOf>
+	        <name>Nexus aliyun</name>
+	        <url>http://maven.aliyun.com/nexus/content/groups/public</url>
+	    </mirror>
+
+
+
+
+
+
+显示所有数据库
+
+mysql>SHOW DATABASES;
+
+使用数据库
+
+mysql>USE 数据库名;
+
+显示所有表
+
+mysql>SHOW TABLES;
+
+显示字段信息
+
+SHOW COLUMNS FROM study
+或者
+DESCRIBE study  / desc study
+
+插入数据
+
+mysql> insert into study (username,class,sex)VALUES('小王',1,'男'),('小四',2,'女');
+
+10
+
+查询数据（使concat函数拼接数据）
+
+mysql> SELECT username,CONCAT(class,'班'),sex FROM study;
+
+mysql -uroot 
+
+直接回车，之后按提示输入密码，
+
+新建数据库
+
+在新建数据库之后，我们先设置一下字符集
+
+mysql>SET NAMES utf8;
+
+然后再创建数据库
+
+mysql>CREATE DATABASE lesson
+导入sql文件
+source path/xxx.sql
+
+
+连接MYSQL：
+
+格式： mysql -h主机地址 -u用户名 －p用户密码
+
+1、例1：连接到本机上的MYSQL
+
+找到mysql的安装目录，一般可以直接键入命令mysql -uroot -p，回车后提示你输密码，如果刚安装好MYSQL，超级用户root是没有密码的，故直接回车即可进入到MYSQL中了，MYSQL的提示符是：mysql>
+
+2、连接到远程主机上的MYSQL
+
+假设远程主机的IP为：10.0.0.1，用户名为root,密码为123。则键入以下命令：
+
+mysql -h10.0.0.1 -uroot -p123
+
+（注：u与root可以不用加空格，其它也一样）
+
+3、退出MYSQL命令
+
+exit （回车） 
+
+==查看字符集==
+
+//查看MySQL数据库服务器和数据库字符集 show variables like '%char%';
+//查看表的字符集 show table status from mysql_db like '%tb_name%'
+//查看表中所有列的字符集 show full columns from tb_name;
+//查看mysql所支持的字符集 show charset;
+
+==修改字符集==
+//修改全局字符集
+set character_set_connection=gb2312;
+set character_set_database=gb2312;
+set character_set_results=gb2312;
+set character_set_server=gb2312;
+set character_set_system=gb2312;
+set collation_connection=gb2312;
+set collation_database=gb2312;
+set collation_server=gb2312;
+
+//修改表的字符集 ALTER TABLE tb_name CONVERT TO CHARACTER SET gb2312;
+
+//修改字段字符集 alter table tb_name modify column tb_column varchar(30) character set gb2312 not null;
+
+连表查询 新
+select
+ 	字段 
+from 
+表一  
+inner join 内关联
+表二 
+left inner join  --外键关联
+表二 
+on 
+笛卡尔过滤条件 
+group by 
+分组条件
+having  
+过滤分组条件
+where 
+普通过滤条件
+order by 
+排序 默认升序
+desc 降序
+
+
+子查询
+any 
+
+
+创建库
+create database task_wall;
+
+
+创建表
+create table if not exists users(
+id int auto_increment,
+logincode varchar(20),
+password varchar(20),
+username varchar(50),
+primary key(id),
+unique key(logincode)
+);
+
+unique key(username);   //设置此列键值唯一
+
+
+CREATE TABLE "SYSTEM_MANAGER_EXTEND_FIELD" (
+"ID" VARCHAR2(32 BYTE) NOT NULL ,
+"TABLE_NAME" VARCHAR2(32 BYTE) NOT NULL ,
+"FIELD_NAME" VARCHAR2(32 BYTE) NOT NULL ,
+"FIELD_NAME_LABEL" VARCHAR2(32 BYTE) NOT NULL ,
+"FIELD_TYPE" VARCHAR2(32 BYTE) NOT NULL ,
+"FIELD_LEN" LONG NULL ,
+PRIMARY KEY ("ID")
+);
+
+
+
+
+create table if not exists classes (
+id int,
+name varchar(20),
+room varchar(20),
+master int,
+found datetime,
+primary key(id)
+);
+
+create table if not exists user(
+id int,
+username varchar(20),
+password varchar(20),
+primary key(id)
+);
+ insert into users(
+ username ,
+ password 
+ )values (
+ 'admin',
+'123456'
+);
+
+
+删除表
+drop table if exists student;
+
+插入数据
+ insert into customer(
+ name,
+ address,
+ mobile,
+gender,
+age
+ )values (
+ '李四',
+'上海',
+'9999999999',
+'女',
+ 20
+);
+
+
+ insert into user(
+ logincode,
+ password
+ )values (
+ 'ww',
+ 222222
+);
+
+
+查看表结构
+desc[ribe] country;
+
+创建表
+create table customer(
+	id int,
+	name varchar(20),
+	age int,
+	birthday date
+);
+
+插入记录
+insert into customer (
+	id, 
+	name,
+	age,
+	birthday
+) values (
+	1,
+	'张三',
+	30,
+	'1998-2-5'
+);
+
+insert into customer (
+	id, 
+	name,
+	age,
+	birthday
+) values (
+	3,
+	'李四',
+	50,
+	'1998-2-5'
+);
+
+更新记录
+update 
+	customer 
+set
+	id = 2,
+	age = 40;
+	
+update 
+	customer
+set 
+	age = 60;
+
+update 
+	customer
+set 
+	age = 30
+where 
+	id = 2;
+
+删除记录
+delete from 
+	customer 
+where 
+	id = 3;
+	
+CRUD -- 增删改查
+查询 select 
+插入 insert into 
+更新 update 
+删除 delete from 
+
+
+<!-- rewriteBatchedStatements=true 设置允许mysql执行批处理 -->
+jdbc:mysql://localhost:3306/bookstore?rewriteBatchedStatements=true
+
+
+
+
+
+
+
+
+
+
+
+
+查看各个数据库大小
+SELECT owner, tablespace_name, ROUND (SUM (BYTES) / 1024 / 1024, 2) "USED(M)" FROM dba_segments GROUP BY owner, tablespace_name ORDER BY SUM (BYTES) DESC;
+
+
+SELECT d.owner, d.tablespace_name, d.BYTES, a.USERNAME, a.CREATED FROM dba_segments d, all_users a where d.owner = a.USERNAME GROUP BY d.owner;
+
+
+SELECT * FROM tablespace_name;
+
+
+DROP TABLESPACE TYOA_SPACE;
+
+ INCLUDING CONTENTS AND DATAFILES;
+
+desc all_users;
+
+
+HBGWXC170316		       USERS				  506.69
+HBGWXC1108		       USERS				  405.88
+
+
+drop user TY cascade;
+
+
+
+
+5.删除表空间：
+drop tablespace TYOA_SPACE including contents and datafiles;
+注：NNC_DATA01  ----是你要删除的表空间
+
+6.删除数据库用户：
+drop user  nc63train  cascade;
+注：nc63train ----你要删除的用户
+
+
+7.删除磁盘上生成的表空间文件：
+到1.1步骤的地址：'D:\oracledata\NNC_DATA01.dbf'  找到该dbf文件删除即可。注意，有两个：NNC_DATA01.dbf    NNC_INDEX01.dbf
+
+
+
+
+create tablespace tyoa_space datafile 'D:\app\Administrator\oradata\orcl\tyoa_space.DBF' size 15M autoextend on next 5M maxsize unlimited;  
+
+查看表空间位置
+select file_name , tablespace_name from dba_data_files;
+
+
+
+
+
+
+
+
+ shutdown -r now ： 表示现在重启计算机！
+reboot   也表示重启！
+
+
+
+alter database datafile '/home/oracle_11/app/oradata/orcl/TYOA_SPACE.DBF' offline drop;
+
+alter database tempfile '/home/oracle_11/app/oradata/orcl/TYOA_SPACE.DBF' drop including datafiles;     
+
+
+
+
+
+ alter database datafile 42 offline drop      （扔掉打不开的空间文件）
+
+
+
+
+swldzlc	process1480934535028	task1480838156619	收文领导子流程	
+swfmszzlc	process1480862681793	task1480862709301	收文副秘书长子流程	
+
+insert into GWLZ_PROCESS_MENU (
+    id, logincode, password, username
+) values (
+    #{id}, #{logincode}, #{password}, #{username}
+)
+
+insert into GWLZ_OPER (id, logincode, password, username) values (#{id}, #{logincode}, #{password}, #{username})
+
+delete from t_gdmp_user where id = #{id}
+
+update t_gdmp_user
+set
+    logincode = #{logincode},
+    password = #{password},
+    username = #{username}
+where id = #{id}
+
+select id, logincode, password, username from t_gdmp_user where id = #{id}
+
+
+
+create table if not exists users(
+id int auto_increment,    --ID 主键 唯一 自增
+logincode varchar(20),	--登录账号 唯一
+password varchar(20),	--密码
+username varchar(50),	--用户姓名
+primary key(id),	--设置ID为主键
+unique key(logincode)	--设置登录账号 唯一
+);
+
+
+
+alter table TS_HUHHOT_GOV_OA add (
+
+	SIGN_TIME VARCHAR2(1000 BYTE) NULL,
+
+	SIGN_NAME VARCHAR2(1000 BYTE) NULL,
+
+	SIGN_IP VARCHAR2(1000 BYTE) NULL
+
+);
+
+
+
+ORACLE
+
+创建用户
+create user btgwlztest01 identified by btgwlztest01;
+
+用户授权
+grant dba to btgwlztest01;
+
+删除用户
+drop user jxwgwlz cascade;
+
+
+    例子：创建表空间  
+    create tablespace JXWLZ
+    datafile 'D:\app\Administrator\oradata\orcl\JXWLZ.DBF'   
+    size 1500M
+    autoextend on next 5M maxsize 30000M;  
+
+  删除表空间  
+    drop tablespace EXCHANGE_SPACE including contents and datafiles;
+
+
+    授予用户使用表空间的权限：  
+    alter user btgwjh01 quota unlimited on EXCHANGE_SPACE;  
+    alter user btgwjh01 quota unlimited on EP;  
+    或 alter user 用户名 quota *M on 表空间;  
+
+
+
+连表查询：
+SELECT e.empno, e.ename, e.sal, e.job, m.ename, d.dname, d.loc
+FROM emp e, emp m, dept d
+WHERE e.mgr=m.empno AND e.deptno=d.deptno;
+
+select a.字段名, b.字段名,c.字段名
+from a表,b表,c表
+where a.字段名=b.字段名 and b.字段名=c.字段名;
+
+
+ORACLE数据库空表导出方法
+
+1.  select 'alter table '||table_name||' allocate extent;' from user_tables where num_rows=0 or num_rows is null;
+
+2.  执行上面的一条命令后，把所有执行结果复制出来，然后再把所有结果粘贴进命令行全部执行。
+
+
+exp system/manager@TEST file=d:\daochu.dmp tables=(table1,table2) 
+
+imp system/manager@TEST  file=d:\daochu.dmp  tables=(table1)  ignore=y
+
+select * from all_users;
+查询 日志
+select * from v$logfile;
+
+
+连接远程oracle
+sqlplus username/password@IP:1521/orcl
+	    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@echo off 
+
+::获取当前日期 格式为（2016-01-01） 从下标0开始 往后获取10位
+set d=%date:~0,10%
+echo %d:/=%
+echo %d%
+::获取当前年份 格式为（2016）
+set y=%date:~0,4%
+
+::获取当前月和日 格式为（01-01）
+set y=%date:~5,5%
+
+::获取当前时和分 格式为（0101）
+set t=%time:~0,2%%time:~3,2%
+
+::登陆用户名
+set username=jxwgwlz
+::登陆密码
+set password=jxwgwlz
+::数据库实例
+set DB=ORCL
+::表的所有者
+set OWNER=tzb_znrwk
+::创建备份目录 
+set bakpath=D:\backup\%y:/=%\%m:/=%
+
+echo\ 
+echo ---------备份参数----------
+echo\ 
+echo 登陆用户名:%username%
+echo 登陆密码:%password%
+echo 数据库实例:%DB%
+echo 表的所有者:%OWNER%
+echo 备份目录:%D:\bakpath% 
+echo\ 
+echo ---------备份参数---------
+echo\ 
+echo\ 
+if not exist %bakpath% md %bakpath%
+
+echo 开始备份表.....
+
+exp %username%/%password%@%DB% OWNER=%OWNER% FEEDBACK=1000 file=%bakpath%\dmp_%d:/=%_%t%.DMP log=%bakpath%\log_%d:/=%_%t%.log compress=y
+
+
+
+
+echo\ 
+echo\ 
+echo ---------备份结束----------
+echo\ 
+echo 请查看备份文件:%bakpath%\dmp_%d:/=%_%t%.DMP
+echo 请查看备份日志:%bakpath%\log_%d:/=%_%t%.log 
+echo\ 
+echo ---------备份结束---------
+echo\ 
+pause
+ 
+
+
+
+
+
+EXP参数详解
+使用的格式是：EXP KEYWORD=value 或 KEYWORD=(value1,value2,...,valueN)
+其中USERID是必须的且为第一个参数
+ 
+关键字 备注
+USERID 用户名/口令
+FULL 导出整个文件 (N)
+BUFFER 数据缓冲区的大小
+OWNER 所有者用户名列表
+FILE 输出文件 (EXPDAT.DMP)
+TABLES 表名列表
+COMPRESS 导入一个范围 (Y)
+RECORDLENGTH IO 记录的长度
+GRANTS 导出权限 (Y)
+INCTYPE 增量导出类型
+INDEXES 导出索引 (Y)
+RECORD 跟踪增量导出 (Y)
+ROWS 导出数据行 (Y)
+PARFILE 参数文件名
+CONSTRAINTS 导出限制 (Y)
+CONSISTENT 交叉表一致性
+LOG 屏幕输出的日志文件
+STATISTICS 分析对象 (ESTIMATE)
+DIRECT 直接路径 (N)
+TRIGGERS 导出触发器 (Y)
+FEEDBACK 显示每 x 行 (0) 的进度
+FILESIZE 各转储文件的最大尺寸
+QUERY 选定导出表子集的子句
+下列关键字仅用于可传输的表空间 
+TRANSPORT_TABLESPACE 导出可传输的表空间元数据 (N)
+TABLESPACES 将传输的表空间列表
+ 
+
+IMP参数详解
+使用的格式是：IMP KEYWORD=value 或 KEYWORD=(value1,value2,...,valueN)
+其中USERID是必须的且为第一个参数
+
+关键字 备注
+USERID 用户名/口令
+FULL 导入整个文件(N)
+BUFFER 数据缓冲区大小
+FROMUSER 所有者用户名列表
+TOUSER 用户名列表
+FILE 输入文件 (EXPDAT.DMP)
+SHOW 只列出文件内容(N)
+TABLES 表名列表
+IGNORE 忽略创建错误 (N)
+RECORDLENGTH IO 记录的长度
+GRANTS 导入权限 (Y)
+INCTYPE 增量导入类型
+INDEXES 导入索引 (Y)
+COMMIT 提交数组插入 (N)
+ROWS 导入数据行 (Y)
+PARFILE 参数文件名
+LOG 屏幕输出的日志文件
+CONSTRAINTS 导入限制 (Y)
+DESTROY 覆盖表空间数据文件 (N)
+INDEXFILE 将表/索引信息写入指定的文件
+SKIP_UNUSABLE_INDEXES 跳过不可用索引的维护 (N)
+FEEDBACK 每 x 行显示进度 (0)
+TOID_NOVALIDATE 跳过指定类型 ID 的验证
+FILESIZE 每个转储文件的最大大小
+STATISTICS 始终导入预计算的统计信息
+RESUMABLE 在遇到有关空间的错误时挂起 (N)
+RESUMABLE_NAME 用来标识可恢复语句的文本字符串
+RESUMABLE_TIMEOUT RESUMABLE 的等待时间
+COMPILE 编译过程, 程序包和函数 (Y)
+STREAMS_CONFIGURATION 导入流的一般元数据 (Y)
+STREAMS_INSTANTIATION 导入流实例化元数据 (N)
+下列关键字仅用于可传输的表空间 
+TRANSPORT_TABLESPACE 导入可传输的表空间元数据 (N)
+TABLESPACES 将要传输到数据库的表空间
+DATAFILES 将要传输到数据库的数据文件
+TTS_OWNERS 拥有可传输表空间集中数据的用户
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

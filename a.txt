@@ -1,0 +1,563 @@
+—– BEGIN LICENSE —–
+TwitterInc
+200 User License
+EA7E-890007
+1D77F72E 390CDD93 4DCBA022 FAF60790
+61AA12C0 A37081C5 D0316412 4584D136
+94D7F7D4 95BC8C1C 527DA828 560BB037
+D1EDDD8C AE7B379F 50C9D69D B35179EF
+2FE898C4 8E4277A8 555CE714 E1FB0E43
+D5D52613 C3D12E98 BC49967F 7652EED2
+9D2D2E61 67610860 6D338B72 5CF95C69
+E36B85CC 84991F19 7575D828 470A92AB
+—— END LICENSE ——
+
+
+select t.segment_name, t.segment_type, sum(t.bytes / 1024 / 1024) "占用空间(M)"
+from dba_segments t
+where t.segment_type='TABLE'
+group by OWNER, t.segment_name, t.segment_type;
+
+
+update T_EX_SEND_CONTENT set CONTENT=null;
+update T_EX_SEND_CONTENT set AIP_BODY=null;
+
+update T_EX_RECEIVE_OUT_FILE set CONTENT=null;
+
+
+
+
+
+
+k  >  1
+
+
+i = get(k)
+
+
+--UUID 公文主ID 唯一
+----原始文件
+----流转文件
+----归档文件
+
+
+
+
+4533
+
+2490
+
+20
+
+20
+
+
+
+
+
+
+
+
+
+盂县vpn
+
+yx_zy
+
+3396815_xxzx
+
+3396815
+
+10.10.18.104 
+
+trswcmv7/trsadmin123
+
+
+/** 
+* 
+*----------Dragon be here!----------/ 
+* 　　　┏┓　　┏┓ 
+* 　　┏┛┻━━┛┻┓ 
+* 　　┃　　　━　　┃ 
+* 　　┃　  ┛　┗　┃ 
+* 　　┃　　　　　　┃ 
+* 　　┃　　　┻　　┃  
+*     ┗━┓　　┏━┛ 
+* 　　　　┃　　┃神兽保佑  ┏┓
+* 　　　　┃　　┃代码无BUG ┃┃
+* 　　　　┃　　┗━━━┓  ┃┃
+* 　　　　┃　　　　　　┣━┛┃
+* 　　　　┃　　　　　　┏━━┛ 
+* 　　　　┗┓┓┏┳┓┏┛ 
+* 　　　　　┃┫┫┃┫┫ 
+* 　　　　　┗┻┛┗┻┛ 
+* ━━━━━━神兽出没━━━by:gnerv
+*/ 
+
+
+
+
+
+
+ sourceFileType=0&bizKey=419281765c47e89b015c75e957f91563&documentType=gdgbm&identifier=6&fileType=6&cyear=2017&expireValue=Y&question=6&fileNo=6&docNo=6&chargePerson=%E6%94%BF%E5%8A%A1%E4%B8%80%E7%A7%91&title=%E5%85%B3%E4%BA%8E%E4%B8%8A%E6%8A%A5%E3%80%8A%E5%85%B3%E4%BA%8E%E5%9C%A8%E5%B8%82%E5%9C%BA%E4%BD%93%E7%B3%BB%E5%BB%BA%E8%AE%BE%E4%B8%AD%E5%BB%BA%E7%AB%8B%E5%85%AC%E5%B9%B3%E7%AB%9E%E4%BA%89%E5%AE%A1%E6%9F%A5%E5%88%B6%E5%BA%A6%E7%9A%84%E5%AE%9E%E6%96%BD%E6%84%8F%E8%A7%81%E3%80%8B%E7%9A%84%E6%8A%A5%E5%91%8A&archiveDate=20171122&security=6&pageCount=6&memo=6
+
+
+ sourceFileType=0&bizKey=419281765e60f1f9015e755bb2780bcc&identifier=5&fileType=5&cyear=2017&expireValue=Y&question=5&fileNo=0005&docNo=%E3%80%942017%E3%80%95&chargePerson=%E6%94%BF%E5%8A%A1%E4%B8%80%E7%A7%91&title=%E5%85%B3%E4%BA%8E%E5%8D%B0%E5%8F%91%E3%80%8A%E5%86%85%E8%92%99%E5%8F%A4%E8%87%AA%E6%B2%BB%E5%8C%BA%E5%85%9A%E6%94%BF%E6%9C%BA%E5%85%B3%E5%85%AC%E5%8A%A1%E5%A4%96%E5%87%BA%E5%92%8C%E5%85%AC%E5%8A%A1%E6%8E%A5%E5%BE%85%E7%9B%91%E7%9D%A3%E7%AE%A1%E7%90%86%E5%8A%9E%E6%B3%95%E3%80%8B%E7%9A%84%E9%80%9A%E7%9F%A5&archiveDate=2017-11-13+00%3A00%3A00.0&security=&pageCount=5&memo=
+
+
+ 419281765e60f1f9015e755bb2780
+
+
+
+
+ baotou.gov.cn
+
+ 
+
+
+
+
+ID		
+ARCHIVEID    档案ID
+USERNAME   借阅人
+USERORG     借阅部门
+borrowdate       借阅时间
+
+backdate    归还时间
+
+
+
+STATUS	申请状态  0 申请（未通过）  1 审批中  2审批通过
+
+
+
+
+
+124.166.241.60
+
+
+
+
+
+
+
+
+sid=
+9itY7ByG3rn0FkwW
+&
+r=
+9e5caf0857c5d845807831a5c45b57f3
+
+
+d41d8cd98f00b204e9800998ecf8427e
+
+
+
+//1、打印排序
+//2、目录导出
+3、监控点击弹框
+4、查询条件时间 普通
+
+
+
+
+
+//添加文件页数字段 用于记录文件页数： 领导批示+会签+正文页数+底稿页数+附件数
+
+alter table GWLZ_FILE_MGR add (FILE_PAGES_NUM varchar2(5));
+comment on column GWLZ_FILE_MGR.FILE_PAGES_NUM is '文件页数';
+
+alter GWLZ_FILE_MGR tb modify (FILE_PAGES_NUM varchar2(5));
+
+update GWLZ_FILE_MGR set FILE_PAGES_NUM = null;
+commit;
+
+
+
+
+jdbc.driverClassName=oracle.jdbc.driver.OracleDriver
+#jdbc.url=jdbc:oracle:thin:@www.sinobroad.com:1521:orcl
+jdbc.url=jdbc:oracle:thin:@192.168.100.211:1521:orcl
+#jdbc.url=jdbc:oracle:thin:@192.168.199.179:1521:orcl
+#jdbc.url=jdbc:oracle:thin:@192.168.1.110:1521:orcl
+jdbc.username=btgwlzxt1106
+jdbc.password=btgwlzxt1106
+
+
+
+
+
+servername=192.168.100.211
+#servername=192.168.199.179
+port=89
+username=aipUser
+password=aipUser
+path=F\:ftp
+
+backupRoot=F:/ftp/backup
+
+#backupRoot=C:/app/Administrator/backup
+#servername=193.18.1.236
+#port=81
+#username=hyxt
+#password=123.com
+#path=D:\FTP
+
+
+
+
+
+
+
+
+
+
+
+
+insert into ht_sys_smsubmit (ID, SPID, SM_ID, SRC_ID, DESTTYPE, MOBILES, CONTENT, ISWAP, URL, SENDTYPE, SENDTIME, CYCLEIDX, TASKSTATUS, INSERTTIME, LASTTIME, SM_TYPE, MSG_FMT, TP_PID, TP_UDHI, FEE_TMID, FEE_TYPE, FEE_CODE, FEE_USER_TYPE, USERID, MODULEID, COUNT1, COUNT2, RSVD1, RSVD2, RSVD3, PUSH_MODE, SWITCH_INTERVAL, TITLE, BUSINESS_ID, RECEIVERS, DECOMPOSITION_FLAG)
+values ('fe2bdd598ffc4bf48ff3f829f4075e1c', '0000', '1.2532269096892333E8', '01', '1', '[{'id':'13384854531','name':'系统消息','type':''}]', '您有新的公文：5676867868678678567678678,请尽快办理！ 请注意查收！', 1, '', 1, to_date('2018-01-14 11:44:38', 'dd-mm-yyyy hh24:mi:ss'), '', 1, to_date('2018-01-14 11:44:38', 'dd-mm-yyyy hh24:mi:ss'), null, 0, 0, 0, 0, '', '01', '000000', '0', '9319', 'MESSAGECENTER', 0, 0, 0, '', '', 'SMS', 30, '', '', '', 0)
+
+
+
+
+
+
+
+
+
+
+
+
+{"data":[{"feedbackDoc":"","sender":"崔菊","id":"15159973066925668350438","createTime":"2017-12-13 17:15:01","title":"转审批测试","symbol":"测试文件  〔  2017  〕  1234  号","status":"已盖章","signStatus":"0\/1","sendTime":"2018-01-15 14:21:46","targetUnits":"中科软测试组","subscriber":"","sendUnitName":""},{"feedbackDoc":"","sender":"崔菊","id":"15159972791338280341490","createTime":"2017-12-13 17:15:01","title":"转审批测试","symbol":"测试文件  〔  2017  〕  1234  号","status":"已盖章","signStatus":"0\/1","sendTime":"2018-01-15 14:21:19","targetUnits":"中科软测试组","subscriber":"","sendUnitName":""}],"total_count":4}
+
+
+{"data":[{"feedbackDoc":"","sender":"崔菊","id":"15159973066925668350438","createTime":"2017-12-13 17:15:01","title":"转审批测试","symbol":"测试文件  〔  2017  〕  1234  号","status":"已盖章","signStatus":"0\/1","sendTime":"2018-01-15 14:21:46","targetUnits":"中科软测试组","subscriber":"","sendUnitName":""},{"feedbackDoc":"","sender":"崔菊","id":"15159972791338280341490","createTime":"2017-12-13 17:15:01","title":"转审批测试","symbol":"测试文件  〔  2017  〕  1234  号","status":"已盖章","signStatus":"0\/1","sendTime":"2018-01-15 14:21:19","targetUnits":"中科软测试组","subscriber":"","sendUnitName":""}],"total_count":4}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4192817660c5b2db0160d37fe0620189 
+关于研究解决华云项目有关问题的会议纪要
+
+
+
+INSERT INTO "BTGWLZ1111"."GWLZ_DISPATCH" ("ID", "TITLE", "DISPATCH_NUM", "SEND_NUM", "SEND_ORG_NAME", "DISPATCH_TIME", "TASKID", "FROM_URL", "BANJIE_STATE", "DEPT_ID", "OPEN_STATUS", "PS_NAME", "DISPATCH_TYPE", "QUXIAO_CONTENT", "ADD_TIME", "SFAUDITER", "SFSUGGESTION", "SFKINDNAME", "SFSECRETLEVEL", "SFURGENT", "SFNUMBER", "SFYEAR", "SFRENO", "USER_IDS", "BTFWTYPE", "VERSION_COUNT", "FORMS", "RECEIVE_ID", "BMFANKUITYPE", "EMERG", "BANJIEBMFK", "IFHZ", "HZTYPE", "HZTIME", "OPERHISTORY", "BANJIE_MEMO", "ARCHIVE_STATUS", "ROWID") VALUES ('4192817660c5b2db0160d37fe0620189', '关于研究解决华云项目有关问题的会议纪要', '专题会议纪要 〔2018〕 2号号', NULL, '政务三科', TO_DATE('2018-01-08 10:01:01', 'SYYYY-MM-DD HH24:MI:SS'), '936290', 'gwlzxt\\shouwenfile\\20180111\\C71C6C11-4BA2-3B88-1429-CDB88B5F4E64.aip', '1', '1282427                         ', '不公开', NULL, 'huiyi', NULL, TO_DATE('2018-01-08 10:01:01', 'SYYYY-MM-DD HH24:MI:SS'), NULL, NULL, '专题会议纪要', NULL, NULL, NULL, '〔2018〕', '2��', 'zwscdx', '会议纪要', '9', NULL, NULL, NULL, '默认', NULL, NULL, NULL, NULL, '转下发(王帅)', NULL, '0', 'AAAR8SAAEAAAL4/AAM');
+
+
+
+
+
+http://193.18.1.221:8012/sendnotify.cgi?msg=12345678&receiver=刘洋&title=公文系统提醒
+
+
+?loginName=zwyclyq&password=123456
+
+
+
+
+http://193.18.1.221:8012/sendnotify.cgi?msg=[进入公文系统|http://193.18.1.246/gw/user/login%3floginName%3dzwyclyq%26password%3d123456]&receiver=刘洋&title=公文系统提醒
+
+
+
+http://193.18.1.221:8012/sendSms.cgi?msg=hello&receiver=lcl&sender=刘洋
+
+
+
+
+
+
+
+//1、自动播发
+//2、原来了 登录不了
+3、留言板
+
+
+
+
+04722241175
+
+
+
+
+
+盂县网站迁移情况说明
+
+	盂县政府门户网站于2017年12月24日迁移至阳泉市政府WCM系统中，网站数据和网页模板迁移完成，测试访问地址：http://web.sxyx.gov.cn，目前经过初次测试没有发现问题，已上报客户，由客户进行再次测试，预计于2017年12月25日可正式上线运行。
+
+存在问题
+	1、目前WCM系统没有内置的留言板和信箱功能，需要二次开发设计表单和样式，目前使用原网站CMS系统代替。
+	2、首页模板客户的改版需求未实现，模板修改需要设计、开发和测试。
+	3、WCM系统没有友情链接类型的广告发布，目前采用文章跳转实现。
+	4、WCM系统没有视频类型的栏目，无法单独发布视频，目前采用文章中插入视频的方式显示。
+	5、WCM系统没有图片类型的栏目，无法发布图片组类型的内容，目前采用多个文章分别插入图片的方式显示。
+
+
+
+	{"rows":[{"id":"4192817561075a2e016108947716005d","userdata":{"total_count":"1"},"data":["0","1","<img src='images/thumb/png/light_green.png' />","afdsfsdfsdf","","2018-01-18",null,"默认一次",null,"副主任未审批",""]}]}
+
+
+	{"rows":[{"id":"4192817561075a2e0161084ae336001b","userdata":{"total_count":"5"},"data":["0","第10期^/attachments/publication/pub_269086.doc","测试刊物模板","李婷","2018-01-18 16:03:01.0","已发布","41928175601188d901601f32628e0096"]},
+
+
+
+
+
+	{"id":"4192817560f830990160f896f0d30023","userdata":null,"data":["0","第2期^/attachments/null","测试刊物模板","李婷","2018-01-15 16:31:46.0","已发布","41928175601188d901601f32628e0096"]},{"id":"4192817561075a2e01610860909e002b","userdata":null,"data":["0","第11期^/attachments/publication/pub_412665.doc","测试刊物模板","李婷","2018-01-18 16:26:41.0","已发布","41928175601188d901601f32628e0096"]},{"id":"4192817560f830990161028e40ec0091","userdata":null,"data":["0","第8期^/attachments/publication/pub_676247.doc","测试刊物模板","李婷","2018-01-17 13:18:52.0","已发布","41928175601188d901601f32628e0096"]},{"id":"4192817560f830990160f8964dd10020","userdata":null,"data":["0","第1期^/attachments/null","测试刊物模板","李婷","2018-01-15 14:51:28.0","已发布","41928175601188d901601f32628e0096"]}]}
+
+
+
+	首页增加 城乡居保
+
+	家电维修
+
+	劳动就业
+
+
+
+
+
+
+青山区公文流转系统分支代码svn地址（使用的是包头办公厅公文流转系统当前的最新代码）
+svn://www.sinobroad.com/1-项目代码管理/22-公文流转系统/2-编码/2-branches/btqsqgwlzxt
+
+数据库地址 192.168.100.224
+用户名 btgwlzxt0926
+密码 btgwlzxt0926
+
+
+青山区公文交换系统分支代码svn地址（使用的是包头办公厅公文交换系统当前的最新代码）
+svn://www.sinobroad.com/1-项目代码管理/30-包头OA项目/2-编码/2-公文交换系统/btqsqex
+
+数据库地址 192.168.100.224
+用户名 btgwjh0823
+密码 btgwjh0823
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--index.wxml-->
+<view class="container">
+  <view class="userinfo">
+    <button wx:if="{{!hasUserInfo && canIUse}}" open-type="getUserInfo" bindgetuserinfo="getUserInfo"> 获取头像昵称 </button>
+    <block wx:else>
+      <image bindtap="bindViewTap" class="userinfo-avatar" src="{{userInfo.avatarUrl}}" background-size="cover"></image>
+      <text class="userinfo-nickname">{{userInfo.nickName}}</text>
+    </block>
+  </view>
+  <view class="usermotto">
+    <text class="user-motto">{{motto}}</text>
+    <view class="btn-area">
+      <navigator url="/pages/article/articleList" hover-class="navigator-hover">跳转到新页面</navigator>
+    </view>
+  </view>
+</view>
+
+
+
+
+//index.js
+//获取应用实例
+const app = getApp()
+
+Page({
+  data: {
+    motto: 'Hello World',
+    userInfo: {},
+    hasUserInfo: false,
+    canIUse: wx.canIUse('button.open-type.getUserInfo')
+  },
+  //事件处理函数
+  bindViewTap: function() {
+    wx.navigateTo({
+      url: '../logs/logs'
+    })
+  },
+  onLoad: function () {
+    if (app.globalData.userInfo) {
+      this.setData({
+        userInfo: app.globalData.userInfo,
+        hasUserInfo: true
+      })
+    } else if (this.data.canIUse){
+      // 由于 getUserInfo 是网络请求，可能会在 Page.onLoad 之后才返回
+      // 所以此处加入 callback 以防止这种情况
+      app.userInfoReadyCallback = res => {
+        this.setData({
+          userInfo: res.userInfo,
+          hasUserInfo: true
+        })
+      }
+    } else {
+      // 在没有 open-type=getUserInfo 版本的兼容处理
+      wx.getUserInfo({
+        success: res => {
+          app.globalData.userInfo = res.userInfo
+          this.setData({
+            userInfo: res.userInfo,
+            hasUserInfo: true
+          })
+        }
+      })
+    }
+  },
+  getUserInfo: function(e) {
+    console.log(e)
+    app.globalData.userInfo = e.detail.userInfo
+    this.setData({
+      userInfo: e.detail.userInfo,
+      hasUserInfo: true
+    })
+  }
+})
+
+
+
+
+8783046530534b788dfeb1b41953f71d
+c6cf5f864b8f48c38b01b3dc4d9871b0
+
+
+
+
+
+
+
+		// 行政区划                    2018 01 30  追加
+		Map m_org_division = new HashMap();             
+		m_org_division.put("type", "select");
+		m_org_division.put("label", "&nbsp;&nbsp;行政区划：");//ccz888
+		m_org_division.put("name", "division");
+
+		List listAivision = new ArrayList();
+
+		Map mOrg_default = new HashMap();
+		mOrg_default.put("text", "    ");
+		mOrg_default.put("value", "0");
+		listAivision.add(mOrg_default);
+		
+		Map mOrg_province = new HashMap();
+		mOrg_province.put("text", "    省级");
+		mOrg_province.put("value", "1");
+		listAivision.add(mOrg_province);
+		
+		Map mOrg_city = new HashMap();
+		mOrg_city.put("text", "    市级");
+		mOrg_city.put("value", "2");
+		listAivision.add(mOrg_city);
+		
+		Map mOrg_county = new HashMap();
+		mOrg_county.put("text", "    区、县级");
+		mOrg_county.put("value", "3");
+		listAivision.add(mOrg_county);
+		if ("1".equals(org.getAdministrativeDivision())) {
+			mOrg_province.put("selected", "true");
+		} else if ("2".equals(org.getAdministrativeDivision())){
+			mOrg_city.put("selected", "true");
+		} else if ("3".equals(org.getAdministrativeDivision())){
+			mOrg_county.put("selected", "true");
+		} else if ("0".equals(org.getAdministrativeDivision())){
+			mOrg_default.put("selected", "true");
+		} else {
+			mOrg_default.put("selected", "true");
+		}
+
+		m_org_division.put("options", listAivision);
+		list.add(m_org_division);
+
+
+
+
+
+
+			/**
+	 * 组织机构行政区划
+	 */
+	@Column(name = "ADMINISTRATIVEDIVISION")
+	private String administrativeDivision;
+	
+	
+
+	public String getAdministrativeDivision() {
+		return administrativeDivision;
+	}
+	public void setAdministrativeDivision(String administrativeDivision) {
+		this.administrativeDivision = administrativeDivision;
+	}
+
+
+
+
+
+
+
+b2a104ae3d2b3f7c2436204c6feb05df    MD5
+
+3b9764655dc74c398eea641d44ea11b6    UUID
+
+
+
+
+
+
+
+
+553175535@qq.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
