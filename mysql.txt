@@ -192,7 +192,7 @@ sudo mv jdk1.7.0/ java-7-sun
 vim ~/.bashrc 如果想要所有用户都使用Oracle jdk，请改为 vim /etc/profile
 添加以下内容：
 
-export JAVA_HOME=/opt/jdk/jdk1.7
+export JAVA_HOME=/mnt/jdk/jdk1.8
 export JRE_HOME=${JAVA_HOME}/jre
 export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib
 export PATH=${JAVA_HOME}/bin:$PATH

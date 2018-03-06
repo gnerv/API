@@ -646,3 +646,2869 @@ tasktracker可以在任何时间点通过以下命令即时运行/关闭。Maste
 tasktracker可以在任何时间点通过以下命令即时运行/关闭。
 
 $ $HADOOP_HOME/bin/hadoop-daemon.sh stop tasktracker $HADOOP_HOME/bin/hadoop-daemon.sh start tasktracker
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+hadoop hbase hive 常见问题解决
+原创 2015年03月24日 10:29:59 标签：hbase /hadoop /hive /Hadoop常见问题 40771
+
+安装过程中，由于网络终端，导致下面问题：
+
+问题1：安装停止在获取安装锁
+ 
+
+/tmp/scm_prepare_node.tYlmPfrT
+
+usingSSH_CLIENT to get the SCM hostname: 172.16.77.20 33950 22 
+opening logging file descriptor 
+
+正在启动安装脚本...正在获取安装锁...BEGIN flock 4 
+
+这段大概过了半个小时，一次卸载，一次等了快1个小时，终于过去了，
+
+
+问题2：不能选择主机
+ 
+
+安装失败了，重新不能选主机
+
+
+
+
+图1
+解决方案，需要清理安装失败文件
+卸载 Cloudera Manager 5.1.x.和 相关软件【官网翻译：高可用】
+
+
+问题3：DNS反向解析PTR localhost：
+ 
+
+ 
+
+描述：
+
+DNS反向解析错误，不能正确解析Cloudera Manager Server主机名
+日志：
+
+Detecting Cloudera Manager Server...
+Detecting Cloudera Manager Server...
+BEGIN host -t PTR 192.168.1.198
+198.1.168.192.in-addr.arpa domain name pointerlocalhost.
+END (0)
+using localhost as scm server hostname
+BEGIN which python
+/usr/bin/python
+END (0)
+BEGIN python -c 'import socket; import sys; s = socket.socket(socket.AF_INET);s.settimeout(5.0); s.connect((sys.argv[1], int(sys.argv[2]))); s.close();'localhost 7182
+Traceback (most recent call last):
+File "<string>", line 1, in <module>
+File "<string>", line 1, in connect
+socket.error: [Errno 111] Connection refused
+END (1)
+could not contact scm server at localhost:7182, giving up
+waiting for rollback request
+
+ 
+
+ 
+
+解决方案：
+
+ 
+
+将连不上的机器 /usr/bin/host 文件删掉,执行下面命令：
+
+1. sudo mv/usr/bin/host /usr/bin/host.bak
+
+复制代码
+
+ 
+
+ 
+
+说明：
+
+不明白cloudera的初衷，这里已经得到 ClouderaManager Server的ip了，却还要把ip解析成主机名来连接
+
+由于DNS反向解析没有配置好，根据Cloudera ManagerServer 的ip解析主机名却得到了localhost，造成之后的连接错误
+
+这里的解决方案是直接把/usr/bin/host删掉，这样ClouderaManager就会直接使用 ip进行连接，就没有错了
+
+参考：
+
+问题 4 NTP:
+
+问题描述：
+
+Bad Health --Clock Offset
+
+The host's NTP service did not respond to a request forthe clock offset.
+
+解决：
+
+配置NTP服务
+
+步骤参考：
+
+
+CentOS配置NTP Server:
+
+
+http://www.hailiangchen.com/centos-ntp/
+
+
+国内常用NTP服务器地址及IP
+
+
+http://www.douban.com/note/171309770/
+
+
+修改配置文件：
+[root@work03 ~]# vim /etc/ntp.conf
+
+# Use public servers from the pool.ntp.org project.
+
+# Please consider joining the pool (http://www.pool.ntp.org/join.html).
+
+server s1a.time.edu.cn prefer
+
+server s1b.time.edu.cn
+
+server s1c.time.edu.cn
+
+
+restrict 172.16.1.0 mask 255.255.255.0 nomodify   <===放行局域网来源
+
+
+启动ntp
+#service ntpd restart    <===启动ntp服务
+客户端同步时间(work02,work03）：
+ntpdate work01
+说明：NTP服务启动需要大约五分钟时间，服务启动之前，若客户端同步时间，则会出现错误“no server suitable for synchronization found”
+定时同步时间：
+在work02和 work03上配置crontab定时同步时间
+
+crontab -e
+00 12 * * * root /usr/sbin/ntpdate 192.168.56.121 >> /root/ntpdate.log2>&1 
+问题 2.2
+描述：
+     Clock Offset
+
+·        Ensure that thehost's hostname is configured properly.
+
+·        Ensure that port7182 is accessible on the Cloudera Manager Server (check firewall rules).
+
+·        Ensure that ports9000 and 9001 are free on the host being added.
+
+·        Check agent logsin /var/log/cloudera-scm-agent/ on the host being added (some of the logs canbe found in the installation details).
+
+问题定位：
+
+
+在对应host（work02、work03）上运行 'ntpdc -c loopinfo'
+[root@work03 work]# ntpdc -c loopinfo
+ntpdc: read: Connection refused
+
+解决：
+
+
+开启ntp服务：
+三台机器都开机启动 ntp服务
+chkconfig ntpd on
+
+ 
+
+
+问题 5 heartbeat:
+错误信息：
+
+Installation failed. Failed to receive heartbeat from agent.
+
+解决：关闭防火墙
+
+
+
+问题 6 Unknow Health：
+Unknow Health
+重启后：Request to theHost Monitor failed.
+service --status-all| grep clo
+机器上查看scm-agent状态：cloudera-scm-agentdead but pid file exists
+解决：重启服务
+service cloudera-scm-agent restart
+
+service cloudera-scm-server restart
+
+ 
+
+
+问题 7 canonial name hostnameconsistent：
+Bad Health
+
+The hostname and canonical name for this host are notconsistent when checked from a Java process.
+
+canonical name：
+
+4092 Monitor-HostMonitor throttling_loggerWARNING  (29 skipped) hostname work02 differs from the canonical namework02.xinzhitang.com
+
+解决：修改hosts 使FQDN和 hostname相同
+
+ps：虽然解决了但是不明白为什么主机名和主机别名要一样
+
+/etc/hosts
+
+192.168.1.185 work01 work01
+
+192.168.1.141 work02 work02
+
+192.168.1.198 work03 work03
+
+
+问题 8 Concerning Health：
+Concerning Health Issue
+
+--  Network Interface Speed --
+
+描述：The host has 2 network interface(s) that appear to beoperating at less than full speed. Warning threshold: any.
+
+详细：
+
+This is a host health test that checks for networkinterfaces that appear to be operating at less than full speed.
+A failure of this health test may indicate that network interface(s) may beconfigured incorrectly and may be causing performance problems. Use the ethtoolcommand to check and configure the host's network interfaces to use the fastestavailable link speed and duplex mode.
+
+解决：
+
+本次测试修改了 Cloudera Manager 的配置，应该不算是真正的解决
+
+ 
+
+问题10 IOException thrown while collecting data from host: No route to host
+原因：agent开启了防火墙
+
+解决：service iptables stop
+
+问题11
+2、Clouderarecommendssetting /proc/sys/vm/swappiness to 0. Current setting is 60. Use thesysctlcommand to change this setting at runtime and edit /etc/sysctl.conf forthissetting to be saved after a reboot. You may continue with installation, butyoumay run into issues with Cloudera Manager reporting that your hostsareunhealthy because they are swapping. The following hosts are affected:
+
+解决：
+
+# echo 0>/proc/sys/vm/swappiness （toapply for now）
+
+# sysctl-wvm.swappiness=0  （to makethis persistentacross reboots）
+
+问题12 时钟不同步（同步至中科大时钟服务器202.141.176.110）
+# echo "0 3 * **/usr/sbin/ntpdate 202.141.176.110;/sbin/hwclock–w">>/var/spool/cron/root
+
+# service crondrestart
+
+# ntpdate202.141.176.110
+
+问题13 The host's NTPservice didnot respond to a request for the clock offset.
+#service ntpdstart
+
+# ntpdc -cloopinfo (thehealth will be good if this command executed successfully)
+
+问题14 The Cloudera ManagerAgentis not able to communicate with this role's web server.
+一种原因是元数据数据库无法连接，请检查数据库配置：
+
+ 
+
+问题15 Hive MetastoreServer无法启动，修改Hive元数据数据库配置（当我们修改主机名后即应修改元数据数据库配置）：
+ 
+
+ 
+
+ 
+
+ 
+
+问题排查方式
+
+一般的错误，查看错误输出，按照关键字google
+异常错误（如namenode、datanode莫名其妙挂了）：查看hadoop（$HADOOP_HOME/logs）或hive日志
+
+hadoop错误
+
+
+问题16 datanode无法正常启动
+ 
+
+
+添加datanode后，datanode无法正常启动，进程一会莫名其妙挂掉，查看namenode日志显示如下：
+
+    Text代码
+
+2013-06-21 18:53:39,182 FATALorg.apache.hadoop.hdfs.StateChange: BLOCK* NameSystem.getDatanode: Data nodex.x.x.x:50010 is attempting to report storage ID DS-1357535176-x.x.x.x-50010-1371808472808.Node y.y.y.y:50010 is expected to serve this storage.
+
+原因分析： 
+    拷贝hadoop安装包时，包含data与tmp文件夹（见本人《hadoop安装》一文），未成功格式化datanode 
+解决办法：
+
+    Shell代码
+
+rm -rf /data/hadoop/hadoop-1.1.2/data
+
+rm -rf /data/hadoop/hadoop-1.1.2/tmp
+
+hadoop datanode -format
+
+问题17  safe mode
+         Text代码
+
+2013-06-2010:35:43,758 ERROR org.apache.hadoop.security.UserGroupInformation:PriviledgedActionException as:hadoopcause:org.apache.hadoop.hdfs.server.namenode.SafeModeException: Cannot renewlease for DFSClient_hb_rs_wdev1.corp.qihoo.net,60020,1371631589073. Name nodeis in safe mode.
+
+解决方案：
+
+         Shell代码
+
+hadoopdfsadmin -safemode leave
+
+问题18 连接异常
+    Text代码
+
+2013-06-21 19:55:05,801 WARNorg.apache.hadoop.hdfs.server.datanode.DataNode: java.io.IOException: Call tohomename/x.x.x.x:9000 failed on local exception: java.io.EOFException
+
+可能原因：
+
+namenode监听127.0.0.1:9000，而非0.0.0.0:9000或外网IP:9000
+iptables限制
+
+解决方案：
+
+检查/etc/hosts配置，使得hostname绑定到非127.0.0.1的IP上
+iptables放开端口
+
+问题19 namenode id
+    Text代码
+
+ERROR org.apache.hadoop.hdfs.server.datanode.DataNode:java.io.IOException: Incompatible namespaceIDs in/var/lib/hadoop-0.20/cache/hdfs/dfs/data: namenode namespaceID = 240012870;datanode namespaceID = 1462711424 . 
+
+    问题：Namenode上namespaceID与datanode上namespaceID不一致。 
+
+　　问题产生原因：每次namenode format会重新创建一个namenodeId,而tmp/dfs/data下包含了上次format下的id,namenode format清空了namenode下的数据,但是没有清空datanode下的数据,所以造成namenode节点上的namespaceID与 datanode节点上的namespaceID不一致。启动失败。 
+
+　　解决办法：参考该网址http://blog.csdn.net/wh62592855/archive/2010/07/21/5752199.aspx 给出两种解决方法，我们使用的是第一种解决方法：即: 
+
+　　(1)停掉集群服务 
+
+　　(2)在出问题的datanode节点上删除data目录，data目录即是在hdfs-site.xml文件中配置的 dfs.data.dir目录，本机器上那个是/var/lib/hadoop-0.20/cache/hdfs/dfs/data/(注：我们当时在所有的datanode和namenode节点上均执行了该步骤。以防删掉后不成功，可以先把data目录保存一个副本). 
+
+　　(3)格式化namenode. 
+
+　　(4)重新启动集群。 
+
+　　问题解决。 
+       这种方法带来的一个副作用即是，hdfs上的所有数据丢失。如果hdfs上存放有重要数据的时候，不建议采用该方法，可以尝试提供的网址中的第二种方法。 
+
+ 
+
+问题20 目录权限
+
+    start-dfs.sh执行无错，显示启动datanode，执行完后无datanode。查看datanode机器上的日志，显示因dfs.data.dir目录权限不正确导致：
+
+    Text代码
+
+expected: drwxr-xr-x,current:drwxrwxr-x
+
+解决办法： 
+    查看dfs.data.dir的目录配置，修改权限即可。 
+
+hive错误
+
+
+问题21 NoClassDefFoundError
+
+Could not initialize class java.lang.NoClassDefFoundError: Could not initializeclass org.apache.hadoop.hbase.io.HbaseObjectWritable 
+将protobuf-***.jar添加到jars路径
+
+          Xml代码
+
+//$HIVE_HOME/conf/hive-site.xml
+
+   hive.aux.jars.path
+
+   file:///data/hadoop/hive-0.10.0/lib/hive-hbase-handler-0.10.0.jar,file:///data/hadoop/hive-0.10.0/lib/hbase-0.94.8.jar,file:///data/hadoop/hive-0.10.0/lib/zookeeper-3.4.5.jar,file:///data/hadoop/hive-0.10.0/lib/guava-r09.jar,file:///data/hadoop/hive-0.10.0/lib/hive-contrib-0.10.0.jar,file:///data/hadoop/hive-0.10.0/lib/protobuf-java-2.4.0a.jar
+
+ 
+
+问题22 hive动态分区异常
+
+[Fatal Error] Operator FS_2 (id=2): Number of dynamic partitions exceededhive.exec.max.dynamic.partitions.pernode
+
+    Shell代码
+
+    hive> sethive.exec.max.dynamic.partitions.pernode = 10000;
+
+问题23 mapreduce进程超内存限制——hadoop Java heap space
+
+vim mapred-site.xml添加：
+
+         Xml代码
+
+//mapred-site.xml
+
+        
+
+ 
+
+         mapred.child.java.opts
+
+ 
+
+         -Xmx2048m
+
+ 
+
+        
+
+         Shell代码
+
+#$HADOOP_HOME/conf/hadoop_env.sh
+
+exportHADOOP_HEAPSIZE=5000
+
+ 
+
+问题24 hive文件数限制
+
+[Fatal Error] total number of created files now is 100086, which exceeds 100000
+
+    Shell代码
+
+    hive> sethive.exec.max.created.files=655350;
+
+问题25 hive 5.metastore连接超时
+         Text代码
+
+FAILED:SemanticException org.apache.thrift.transport.TTransportException:java.net.SocketTimeoutException: Read timed out
+
+解决方案：
+
+         Shell代码
+
+hive>set hive.metastore.client.socket.timeout=500;
+
+问题26 hive 6.java.io.IOException: error=7, Argument list too long
+         Text代码
+
+ 
+
+Task withthe most failures(5): 
+
+-----
+
+Task ID:
+
+ task_201306241630_0189_r_000009
+
+ 
+
+URL:
+
+ http://namenode.godlovesdog.com:50030/taskdetails.jsp?jobid=job_201306241630_0189&tipid=task_201306241630_0189_r_000009
+
+-----
+
+DiagnosticMessages for this Task:
+
+java.lang.RuntimeException:org.apache.hadoop.hive.ql.metadata.HiveException: Hive Runtime Error whileprocessing row (tag=0){"key":{"reducesinkkey0":"164058872","reducesinkkey1":"djh,S1","reducesinkkey2":"20130117170703","reducesinkkey3":"xxx"},"value":{"_col0":"1","_col1":"xxx","_col2":"20130117170703","_col3":"164058872","_col4":"xxx,S1"},"alias":0}
+
+         atorg.apache.hadoop.hive.ql.exec.ExecReducer.reduce(ExecReducer.java:270)
+
+         at org.apache.hadoop.mapred.ReduceTask.runOldReducer(ReduceTask.java:520)
+
+         atorg.apache.hadoop.mapred.ReduceTask.run(ReduceTask.java:421)
+
+         atorg.apache.hadoop.mapred.Child$4.run(Child.java:255)
+
+         atjava.security.AccessController.doPrivileged(Native Method)
+
+         at javax.security.auth.Subject.doAs(Subject.java:415)
+
+         atorg.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1149)
+
+         atorg.apache.hadoop.mapred.Child.main(Child.java:249)
+
+Caused by:org.apache.hadoop.hive.ql.metadata.HiveException: Hive Runtime Error whileprocessing row (tag=0){"key":{"reducesinkkey0":"164058872","reducesinkkey1":"xxx,S1","reducesinkkey2":"20130117170703","reducesinkkey3":"xxx"},"value":{"_col0":"1","_col1":"xxx","_col2":"20130117170703","_col3":"164058872","_col4":"djh,S1"},"alias":0}
+
+         atorg.apache.hadoop.hive.ql.exec.ExecReducer.reduce(ExecReducer.java:258)
+
+         ... 7 more
+
+Caused by:org.apache.hadoop.hive.ql.metadata.HiveException: [Error 20000]: Unable toinitialize custom script.
+
+         atorg.apache.hadoop.hive.ql.exec.ScriptOperator.processOp(ScriptOperator.java:354)
+
+         atorg.apache.hadoop.hive.ql.exec.Operator.process(Operator.java:474)
+
+         atorg.apache.hadoop.hive.ql.exec.Operator.forward(Operator.java:800)
+
+         atorg.apache.hadoop.hive.ql.exec.SelectOperator.processOp(SelectOperator.java:84)
+
+         atorg.apache.hadoop.hive.ql.exec.Operator.process(Operator.java:474)
+
+         atorg.apache.hadoop.hive.ql.exec.Operator.forward(Operator.java:800)
+
+         atorg.apache.hadoop.hive.ql.exec.ExtractOperator.processOp(ExtractOperator.java:45)
+
+         at org.apache.hadoop.hive.ql.exec.Operator.process(Operator.java:474)
+
+         atorg.apache.hadoop.hive.ql.exec.ExecReducer.reduce(ExecReducer.java:249)
+
+         ... 7 more
+
+Caused by:java.io.IOException: Cannot run program "/usr/bin/python2.7":error=7, 参数列表过长
+
+         at java.lang.ProcessBuilder.start(ProcessBuilder.java:1042)
+
+         atorg.apache.hadoop.hive.ql.exec.ScriptOperator.processOp(ScriptOperator.java:313)
+
+         ... 15 more
+
+Caused by:java.io.IOException: error=7, 参数列表过长
+
+         atjava.lang.UNIXProcess.forkAndExec(Native Method)
+
+         at java.lang.UNIXProcess.(UNIXProcess.java:135)
+
+         atjava.lang.ProcessImpl.start(ProcessImpl.java:130)
+
+         atjava.lang.ProcessBuilder.start(ProcessBuilder.java:1023)
+
+         ... 16 more
+
+ 
+
+ 
+
+FAILED:Execution Error, return code 20000 fromorg.apache.hadoop.hive.ql.exec.MapRedTask. Unable to initialize custom script.
+
+解决方案： 
+升级内核或减少分区数https://issues.apache.org/jira/browse/HIVE-2372
+
+
+问题27 hive 6.runtime error
+ 
+
+    Shell代码
+
+hive> show tables;
+
+FAILED: Error in metadata: java.lang.RuntimeException:Unable to instantiate org.apache.hadoop.hive.metastore.HiveMetaStoreClient
+
+FAILED: Execution Error, return code 1 fromorg.apache.hadoop.hive.ql.exec.DDLTask
+
+问题排查：
+
+         Shell代码
+
+hive -hiveconf hive.root.logger=DEBUG,console
+
+         Text代码
+
+13/07/15 16:29:24 INFO hive.metastore: Trying to connectto metastore with URI thrift://xxx.xxx.xxx.xxx:9083
+
+13/07/15 16:29:24 WARN hive.metastore: Failed to connectto the MetaStore Server...
+
+org.apache.thrift.transport.TTransportException:java.net.ConnectException: 拒绝连接
+
+。。。
+
+MetaException(message:Could not connect to meta storeusing any of the URIs provided. Most recent failure:org.apache.thrift.transport.TTransportException: java.net.ConnectException: 拒绝连接
+
+    尝试连接9083端口，netstat查看该端口确实没有被监听，第一反应是hiveserver没有正常启动。查看hiveserver进程却存在，只是监听10000端口。 
+查看hive-site.xml配置，hive客户端连接9083端口，而hiveserver默认监听10000，找到问题根源了 
+解决办法：
+
+    Shell代码
+
+hive --service hiveserver -p 9083
+
+//或修改$HIVE_HOME/conf/hive-site.xml的hive.metastore.uris部分
+
+//将端口改为10000
+
+ 
+
+ 
+
+ 
+
+using /usr/lib/hive as HIVE_HOME
+
+using /var/run/cloudera-scm-agent/process/193-hive-HIVEMETASTOREas HIVE_CONF_DIR
+
+using /usr/lib/hadoop as HADOOP_HOME
+
+using/var/run/cloudera-scm-agent/process/193-hive-HIVEMETASTORE/yarn-conf asHADOOP_CONF_DIR
+
+ERROR: Failed to find hive-hbase storage handler jars toadd in hive-site.xml. Hive queries that use Hbase storage handler may not workuntil this is fixed.
+
+Wed Oct 22 18:48:53 CST 2014
+
+JAVA_HOME=/usr/java/jdk1.7.0_45-cloudera
+
+using /usr/java/jdk1.7.0_45-cloudera as JAVA_HOME
+
+using 5 as CDH_VERSION
+
+using /usr/lib/hive as HIVE_HOME
+
+using /var/run/cloudera-scm-agent/process/193-hive-HIVEMETASTOREas HIVE_CONF_DIR
+
+using /usr/lib/hadoop as HADOOP_HOME
+
+using/var/run/cloudera-scm-agent/process/193-hive-HIVEMETASTORE/yarn-conf asHADOOP_CONF_DIR
+
+ERROR: Failed to find hive-hbase storage handler jars toadd in hive-site.xml. Hive queries that use Hbase storage handler may not workuntil this is fixed.
+
+Wed Oct 22 18:48:55 CST 2014
+
+JAVA_HOME=/usr/java/jdk1.7.0_45-cloudera
+
+using /usr/java/jdk1.7.0_45-cloudera as JAVA_HOME
+
+using 5 as CDH_VERSION
+
+using /usr/lib/hive as HIVE_HOME
+
+using/var/run/cloudera-scm-agent/process/193-hive-HIVEMETASTORE as HIVE_CONF_DIR
+
+using /usr/lib/hadoop as HADOOP_HOME
+
+using/var/run/cloudera-scm-agent/process/193-hive-HIVEMETASTORE/yarn-conf asHADOOP_CONF_DIR
+
+ERROR: Failed to find hive-hbase storage handler jars toadd in hive-site.xml. Hive queries that use Hbase storage handler may not workuntil this is fixed.
+
+Wed Oct 22 18:48:58 CST 2014
+
+JAVA_HOME=/usr/java/jdk1.7.0_45-cloudera
+
+using /usr/java/jdk1.7.0_45-cloudera as JAVA_HOME
+
+using 5 as CDH_VERSION
+
+using /usr/lib/hive as HIVE_HOME
+
+using/var/run/cloudera-scm-agent/process/193-hive-HIVEMETASTORE as HIVE_CONF_DIR
+
+using /usr/lib/hadoop as HADOOP_HOME
+
+using/var/run/cloudera-scm-agent/process/193-hive-HIVEMETASTORE/yarn-conf asHADOOP_CONF_DIR
+
+ERROR: Failed to find hive-hbase storage handler jars toadd in hive-site.xml. Hive queries that use Hbase storage handler may not workuntil this is fixed.
+
+ 
+
+ 
+
+JAVA_HOME=/usr/java/jdk1.7.0_45-cloudera
+using /usr/java/jdk1.7.0_45-cloudera as JAVA_HOME
+using 5 as CDH_VERSION
+using /usr/lib/hive as HIVE_HOME
+using /var/run/cloudera-scm-agent/process/212-hive-metastore-create-tables as HIVE_CONF_DIR
+using /usr/lib/hadoop as HADOOP_HOME
+using /var/run/cloudera-scm-agent/process/212-hive-metastore-create-tables/yarn-conf as HADOOP_CONF_DIR
+ERROR: Failed to find hive-hbase storage handler jars to add in hive-site.xml. Hive queries that use Hbase storage handler may not work until this is fixed.
+ 
+
+ 
+
+ 
+
+查看  /usr/lib/hive 是否正常
+
+正常的
+
+ 
+
+ 
+
+ 
+
+下午3点21:09.801        FATAL        org.apache.hadoop.hbase.master.HMaster 
+
+Unhandled exception. Starting shutdown.
+
+java.io.IOException: error or interruptedwhile splitting logs in[hdfs://master:8020/hbase/WALs/slave2,60020,1414202360923-splitting] Task =installed = 2 done = 1 error = 1
+
+         atorg.apache.hadoop.hbase.master.SplitLogManager.splitLogDistributed(SplitLogManager.java:362)
+
+         atorg.apache.hadoop.hbase.master.MasterFileSystem.splitLog(MasterFileSystem.java:409)
+
+         atorg.apache.hadoop.hbase.master.MasterFileSystem.splitMetaLog(MasterFileSystem.java:301)
+
+         atorg.apache.hadoop.hbase.master.MasterFileSystem.splitMetaLog(MasterFileSystem.java:292)
+
+         atorg.apache.hadoop.hbase.master.HMaster.splitMetaLogBeforeAssignment(HMaster.java:1070)
+
+         atorg.apache.hadoop.hbase.master.HMaster.finishInitialization(HMaster.java:854)
+
+         atorg.apache.hadoop.hbase.master.HMaster.run(HMaster.java:606)
+
+         atjava.lang.Thread.run(Thread.java:744)
+
+        
+
+        
+
+下午3点46:12.903        FATAL        org.apache.hadoop.hbase.master.HMaster 
+
+Unhandled exception. Starting shutdown.
+
+java.io.IOException: error or interruptedwhile splitting logs in[hdfs://master:8020/hbase/WALs/slave2,60020,1414202360923-splitting] Task =installed = 1 done = 0 error = 1
+
+         atorg.apache.hadoop.hbase.master.SplitLogManager.splitLogDistributed(SplitLogManager.java:362)
+
+         atorg.apache.hadoop.hbase.master.MasterFileSystem.splitLog(MasterFileSystem.java:409)
+
+         atorg.apache.hadoop.hbase.master.MasterFileSystem.splitMetaLog(MasterFileSystem.java:301)
+
+         atorg.apache.hadoop.hbase.master.MasterFileSystem.splitMetaLog(MasterFileSystem.java:292)
+
+         atorg.apache.hadoop.hbase.master.HMaster.splitMetaLogBeforeAssignment(HMaster.java:1070)
+
+         atorg.apache.hadoop.hbase.master.HMaster.finishInitialization(HMaster.java:854)
+
+         atorg.apache.hadoop.hbase.master.HMaster.run(HMaster.java:606)
+
+         atjava.lang.Thread.run(Thread.java:744)      
+
+ 
+
+ 
+
+ 
+
+解决方法：
+在hbase-site.xml加入一条，让启动hbase集群时不做hlog splitting
+
+<property>
+<name>hbase.master.distributed.log.splitting</name>
+<value>false</value>
+</property>
+
+ 
+
+ 
+
+[root@master ~]# hadoop fs -mv/hbase/WALs/slave2,60020,1414202360923-splitting/  /test
+
+[root@master ~]# hadoop fs -ls /test
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+2014-10-28 14:31:32,879  INFO[hconnection-0xd18e8a7-shared--pool2-t224] (AsyncProcess.java:673) - #3,table=session_service_201410210000_201410312359, attempt=14/35 failed 1383 ops,last exception: org.apache.hadoop.hbase.RegionTooBusyException:org.apache.hadoop.hbase.RegionTooBusyException: Above memstore limit,regionName=session_service_201410210000_201410312359,7499999991,1414203068872.08ee7bb71161cb24e18ddba4c14da0f2.,server=slave1,60020,1414380404290, memstoreSize=271430320,blockingMemStoreSize=268435456
+
+       atorg.apache.hadoop.hbase.regionserver.HRegion.checkResources(HRegion.java:2561)
+
+       atorg.apache.hadoop.hbase.regionserver.HRegion.batchMutate(HRegion.java:1963)
+
+       at org.apache.hadoop.hbase.regionserver.HRegionServer.doBatchOp(HRegionServer.java:4050)
+
+       atorg.apache.hadoop.hbase.regionserver.HRegionServer.doNonAtomicRegionMutation(HRegionServer.java:3361)
+
+       atorg.apache.hadoop.hbase.regionserver.HRegionServer.multi(HRegionServer.java:3265)
+
+       atorg.apache.hadoop.hbase.protobuf.generated.ClientProtos$ClientService$2.callBlockingMethod(ClientProtos.java:26935)
+
+       at org.apache.hadoop.hbase.ipc.RpcServer.call(RpcServer.java:2175)
+
+       at org.apache.hadoop.hbase.ipc.RpcServer$Handler.run(RpcServer.java:1879)
+
+ 
+
+Exception
+
+Description
+
+ClockOutOfSyncException
+
+当一个RegionServer始终偏移太大时，master节点结将会抛出此异常.
+
+DoNotRetryIOException
+
+用于提示不要再重试的异常子类: 如UnknownScannerException.
+
+DroppedSnapshotException
+
+如果在flush过程中快照内容并没有正确的存储到文件中时,该异常将被抛出.
+
+HBaseIOException
+
+所有hbase特定的IOExceptions都是HBaseIOException类的子类.
+
+InvalidFamilyOperationException
+
+Hbase接收修改表schema的请求，但请求中对应的列族名无效.
+
+MasterNotRunningException
+
+master节点没有运行的异常
+
+NamespaceExistException
+
+已存在某namespace的异常
+
+NamespaceNotFoundException
+
+找不到该namsespace的异常
+
+NotAllMetaRegionsOnlineException
+
+某操作需要所有root及meta节点同时在线,但实际情况不满足该操作要求
+
+NotServingRegionException
+
+向某RegionServer发送访问请求，但是它并没有反应或该region不可用.
+
+PleaseHoldException
+
+当某个ResionServer宕掉并由于重启过快而导致master来不及处理宕掉之前的server实例, 或者用户调用admin级操作时master正处于初始化状态时, 或者在正在启动的RegionServer上进行操作时都会抛出此类异常.
+
+RegionException
+
+访问region时出现的异常.
+
+RegionTooBusyException
+
+RegionServer处于繁忙状态并由于阻塞而等待提供服务的异常.
+
+TableExistsException
+
+已存在某表的异常
+
+TableInfoMissingException
+
+在table目录下无法找到.tableinfo文件的异常
+
+TableNotDisabledException
+
+某个表没有正常处于禁用状态的异常
+
+TableNotEnabledException
+
+某个表没有正常处于启用状态的异常
+
+TableNotFoundException
+
+无法找到某个表的异常
+
+UnknownRegionException
+
+访问无法识别的region引起的异常.
+
+UnknownScannerException
+
+向RegionServer传递了无法识别的scanner id的异常.
+
+YouAreDeadException
+
+当一个RegionServer报告它已被处理为dead状态，由master抛出此异常.
+
+ZooKeeperConnectionException
+
+客户端无法连接到zookeeper的异常.
+
+ 
+
+ 
+
+ 
+
+ 
+
+INFO
+
+org.apache.hadoop.hbase.regionserver.MemStoreFlusher
+
+Waited 90779ms on a compaction to clean up 'too many store files'; waited long enough... proceeding with flush of session_service_201410210000_201410312359,7656249951,1414481868315.bbf0a49fb8a9b650a584769ddd1fdd89.
+
+ 
+
+ 
+
+MemStoreFlusher实例生成时会启动MemStoreFlusher.FlushHandler线程实例，
+
+  此线程个数通过hbase.hstore.flusher.count配置,默认为1
+
+ 
+
+一台机器硬盘满，一台机器硬盘不满的情况：
+
+群集中有 26,632 个副本不足的块块。群集中共有 84,822 个块。百分比 副本不足的块: 31.40%。 警告阈值：10.00%。
+
+ 
+
+ 
+
+群集中有 27,278 个副本不足的块块。群集中共有 85,476 个块。百分比 副本不足的块: 31.91%。 警告阈值：10.00%。
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+下午4点08:53.847
+
+INFO
+
+org.apache.hadoop.hbase.regionserver.DefaultStoreFlusher
+
+Flushed, sequenceid=45525, memsize=124.2 M, hasBloomFilter=true, into tmp file hdfs://master:8020/hbase/data/default/session_service_201410260000_201410312359/a3b64675b0069b8323665274e2f95cdc/.tmp/b7fa4f5f85354ecc96aa48a09081f786
+
+下午4点08:53.862
+
+INFO
+
+org.apache.hadoop.hbase.regionserver.HStore
+
+Added hdfs://master:8020/hbase/data/default/session_service_201410260000_201410312359/a3b64675b0069b8323665274e2f95cdc/f/b7fa4f5f85354ecc96aa48a09081f786, entries=194552, sequenceid=45525, filesize=47.4 M
+
+下午4点09:00.378
+
+WARN
+
+org.apache.hadoop.ipc.RpcServer
+
+(responseTooSlow): {"processingtimems":39279,"call":"Scan(org.apache.hadoop.hbase.protobuf.generated.ClientProtos$ScanRequest)","client":"192.168.5.9:41284","starttimems":1414656501099,"queuetimems":0,"class":"HRegionServer","responsesize":16,"method":"Scan"}
+
+下午4点09:00.379
+
+WARN
+
+org.apache.hadoop.ipc.RpcServer
+
+RpcServer.respondercallId: 33398 service: ClientService methodName: Scan size: 209 connection: 192.168.5.9:41284: output error
+
+下午4点09:00.380
+
+WARN
+
+org.apache.hadoop.ipc.RpcServer
+
+RpcServer.handler=79,port=60020: caught a ClosedChannelException, this means that the server was processing a request but the client went away. The error message was: null
+
+下午4点09:00.381
+
+INFO
+
+org.apache.hadoop.hbase.regionserver.HRegion
+
+Finished memstore flush of ~128.1 M/134326016, currentsize=2.4 M/2559256 for region session_service_201410260000_201410312359,6406249959,1414571385831.a3b64675b0069b8323665274e2f95cdc. in 8133ms, sequenceid=45525, compaction requested=false
+
+下
+
+ 	 	 
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+问题28 hbase  hbase.hregion.max.filesize应该设置多少合适
+
+默认值：256M
+说明：Maximum HStoreFile size. If any one of a column families'HStoreFiles has grown to exceed this value, the hosting HRegion is splitin two.
+
+HStoreFile的最大值。如果任何一个Column Family（或者说HStore）的HStoreFiles的大小超过这个值，那么，其所属的HRegion就会Split成两个。
+
+调优：
+
+hbase中hfile的默认最大值(hbase.hregion.max.filesize)是256MB，而google的bigtable论文中对tablet的最大值也推荐为100-200MB，这个大小有什么秘密呢？
+　 　众所周知hbase中数据一开始会写入memstore，当memstore满64MB以后，会flush到disk上而成为storefile。当storefile数量超过3时，会启动compaction过程将它们合并为一个storefile。这个过程中会删除一些timestamp过期的数 据，比如update的数据。而当合并后的storefile大小大于hfile默认最大值时，会触发split动作，将它切分成两个region。
+　　lz进行了持续insert压力测试，并设置了不同的hbase.hregion.max.filesize，根据结果得到如下结论：值越小，平均吞吐量越大，但吞吐量越不稳定；值越大，平均吞吐量越小，吞吐量不稳定的时间相对更小。
+
+　　为什么会这样呢？推论如下：
+
+    a 当hbase.hregion.max.filesize比较小时，触发split的机率更大，而split的时候会将region offline，因此在split结束的时间前，访问该region的请求将被block住，客户端自我block的时间默认为1s。当大量的region同时发生split时，系统的整体访问服务将大受影响。因此容易出现吞吐量及响应时间的不稳定现象
+    b 当hbase.hregion.max.filesize比较大时，单个region中触发split的机率较小，大量region同时触发split的 机率也较小，因此吞吐量较之小hfile尺寸更加稳定些。但是由于长期得不到split，因此同一个region内发生多次compaction的机会增 加了。compaction的原理是将原有数据读一遍并重写一遍到hdfs上，然后再删除原有数据。无疑这种行为会降低以io为瓶颈的系统的速度，因此平 均吞吐量会受到一些影响而下降。
+    综合以上两种情况，hbase.hregion.max.filesize不宜过大或过小，256MB或许是一个更理想的经验参数。对于离线型的应用，调整为128MB会更加合适一些，而在线应用除非对split机制进行改造，否则不应该低于256MB
+
+问题29hbase  autoflush=false的影响
+　　无论是官方还是很多blog都提倡为了提高hbase的写入速度而在应用代码中设置autoflush=false，然后lz认为在在线应用中应该谨慎进行该设置。原因如下：
+
+　　a autoflush=false的原理是当客户端提交delete或put请求时，将该请求在客户端缓存，直到数据超过2M(hbase.client.write.buffer决定)或用户执行了hbase.flushcommits()时才向regionserver提交请求。因此即使htable.put()执行返回成功，也并非说明请求真的成功了。假如还没有达到该缓存而client崩溃，该部分数据将由于未发送到regionserver而丢失。这对于零容忍的在线服务是不可接受的。
+
+　　b autoflush=true虽然会让写入速度下降2-3倍，但是对于很多在线应用来说这都是必须打开的，也正是hbase为什么让它默认值为true的原因。当该值为true时，每次请求都会发往regionserver,而regionserver接收到 请求后第一件事就是写hlog，因此对io的要求是非常高的，为了提高hbase的写入速度，应该尽可能高地提高io吞吐量，比如增加磁盘、使用raid 卡、减少replication因子数等
+
+问题 30 hbase从性能的角度谈table中family和qualifier的设置
+
+　　对于传统关系型数据库中的一张table，在业务转换到hbase上建模时，从性能的角度应该如何设置family和qualifier呢？
+　　最极端的，①每一列都设置成一个family，②一个表仅有一个family，所有列都是其中的一个qualifier，那么有什么区别呢？
+
+　　从读的方面考虑：
+　　family越多，那么获取每一个cell数据的优势越明显，因为io和网络都减少了。
+
+　　如果只有一个family，那么每一次读都会读取当前rowkey的所有数据，网络和io上会有一些损失。
+
+　　当然如果要获取的是固定的几列数据，那么把这几列写到一个family中比分别设置family要更好，因为只需一次请求就能拿回所有数据。
+
+　　从写的角度考虑：
+
+　　首先，内存方面来说，对于一个Region，会为每一个表的每一个Family分配一个Store，而每一个Store，都会分配一个MemStore，所以更多的family会消耗更多的内存。
+　　其次，从flush和compaction方面说，目前版本的hbase，在flush和compaction都是以region为单位的，也就是说当一个family达到flush条件时，该region的所有family所属的memstore都会flush一次，即使memstore中只有很少的数据也会触发flush而生成小文件。这样就增加了compaction发生的机率，而compaction也是以region为单位的，这样就很容易发生compaction风暴从而降低系统的整体吞吐量。
+　　第三，从split方面考虑，由于hfile是以family为单位的，因此对于多个family来说，数据被分散到了更多的hfile中，减小了split发生的机率。这是把双刃剑。更少的split会导致该region的体积比较大，由于balance是以region的数目而不是大小为单位来进行的，因此可能会导致balance失效。而从好的方面来说，更少的split会让系统提供更加稳定的在线服务。而坏处我们可以通过在请求的低谷时间进行人工的split和balance来避免掉。
+     因此对于写比较多的系统，如果是离线应该，我们尽量只用一个family好了，但如果是在线应用，那还是应该根据应用的情况合理地分配family。
+
+问题31 hbase.regionserver.handler.count
+ RegionServer端开启的RPC监听器实例个数，也即RegionServer能够处理的IO请求线程数。默认是10.
+
+ 此参数与内存息息相关。该值设置的时候，以监控内存为主要参考。
+
+ 对于 单次请求内存消耗较高的Big PUT场景（大容量单次PUT或设置了较大cache的scan，均属于BigPUT）或ReigonServer的内存比较紧张的场景，可以设置的相对较小。
+
+ 对于 单次请求内存消耗低，TPS（TransactionPerSecond，每秒事务处理量）要求非常高的场景，可以设置的相对大些。
+
+ 
+
+ 
+
+hive 查询日志
+
+2014-11-06 12:39:50,825 Stage-1 map =100%,  reduce = 100%, Cumulative CPU1206.39 sec
+
+2014-11-06 12:39:51,873 Stage-1 map =100%,  reduce = 100%, Cumulative CPU1206.39 sec
+
+MapReduce Total cumulative CPU time: 20minutes 6 seconds 390 msec
+
+Ended Job = job_1414723034537_0042
+
+Loading data to tabledefault.session_service_t4
+
+chgrp: changing ownership of'/user/hive/warehouse/session_service_t4/000000_0': User does not belong tohive
+
+Table default.session_service_t4 stats:[num_partitions: 0, num_files: 1, num_rows: 0, total_size: 4191, raw_data_size:0]
+
+MapReduce Jobs Launched:
+
+Job 0: Map: 556  Reduce: 1  Cumulative CPU: 1206.39 sec   HDFSRead: 36584800 HDFS Write: 4191 SUCCESS
+
+Total MapReduce CPU Time Spent: 20 minutes6 seconds 390 msec
+
+OK
+
+Time taken: 642.531 seconds
+
+ 
+
+ 
+
+ 
+
+ 
+
+2013-05-20 17:39:00,153 ERRORcom.sunchangming.searchlog.CopyAppLogs: err on 2013051918_api_access_65.gz 
+java.io.IOException: Filesystem closed 
+at org.apache.hadoop.hdfs.DFSClient.checkOpen(DFSClient.java:319) 
+at org.apache.hadoop.hdfs.DFSClient.getFileInfo(DFSClient.java:1026) 
+atorg.apache.hadoop.hdfs.DistributedFileSystem.getFileStatus(DistributedFileSystem.java:524)
+at org.apache.hadoop.fs.FileSystem.exists(FileSystem.java:768) 
+at com.sunchangming.searchlog.CopyAppLogs.copyFile(CopyAppLogs.java:51) 
+at com.sunchangming.searchlog.CopyAppLogs.access$000(CopyAppLogs.java:18) 
+at com.sunchangming.searchlog.CopyAppLogs$1.run(CopyAppLogs.java:194) 
+at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:471) 
+at java.util.concurrent.FutureTask$Sync.innerRun(FutureTask.java:334) 
+at java.util.concurrent.FutureTask.run(FutureTask.java:166) 
+at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+atjava.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+at java.lang.Thread.run(Thread.java:722)
+
+然后我就查，为什么呢。我刚刚用final FileSystem dfs =FileSystem.get(getConf()); 得到它啊。
+
+后来发现，我是一个多线程的程序。FileSystem.get(getConf())返回的可能是一个cache中的结果，它并不是每次都创建一 个新的实例。这就意味着，如果每个线程都自己去get一个文件系统，然后使用，然后关闭，就会有问题。因为你们关闭的可能是同一个对象。而别人还在用它！
+
+所以最好是在main函数中就创建好filesystem对象然后在不同函数之间来回传递吧。在main函数用用try…finally关闭它。
+
+多线程程序中，如果你确保在你的get和close之间不会有别人调用get，也没问题。
+
+ 
+
+ 
+
+ 
+
+ 
+
+hbase调优
+
+ 
+
+ 
+
+HBase性能优化的四个要点
+ 
+1hbase.hregion.max.filesize应该设置多少合适
+
+默认值：256M
+
+说明：Maximum HStoreFile size. If any one of a columnfamilies' HStoreFiles has grown to exceed this value, the hosting HRegion issplit in two.
+
+HStoreFile的最大值。如果任何一个Column Family（或者说HStore）的HStoreFiles的大小超过这个值，那么，其所属的HRegion就会Split成两个。
+
+调优：
+
+hbase中hfile的默认最大值(hbase.hregion.max.filesize)是256MB，而google的bigtable论文中对tablet的最大值也推荐为100-200MB，这个大小有什么秘密呢？
+
+众所周知hbase中数据一开始会写入memstore，当memstore满64MB以后，会flush到disk上而成为storefile。 当storefile数量超过3时，会启动compaction过程将它们合并为一个storefile。这个过程中会删除一些timestamp过期的 数据，比如update的数据。而当合并后的storefile大小大于hfile默认最大值时，会触发split动作，将它切分成两个region。
+
+lz进行了持续insert压力测试，并设置了不同的hbase.hregion.max.filesize，根据结果得到如下结论：值越小，平均吞吐量越大，但吞吐量越不稳定；值越大，平均吞吐量越小，吞吐量不稳定的时间相对更小。
+
+为什么会这样呢？推论如下：
+
+  a 当hbase.hregion.max.filesize比较小时，触发split的机率更大，而split的时候会将region offline，因此在split结束的时间前，访问该region的请求将被block住，客户端自我block的时间默认为1s。当大量的region同时发生split时，系统的整体访问服务将大受影响。因此容易出现吞吐量及响应时间的不稳定现象
+
+  b 当hbase.hregion.max.filesize比较大时，单个region中触发split的机率较小，大量region同时触发split的 机率也较小，因此吞吐量较之小hfile尺寸更加稳定些。但是由于长期得不到split，因此同一个region内发生多次compaction的机会增 加了。compaction的原理是将原有数据读一遍并重写一遍到hdfs上，然后再删除原有数据。无疑这种行为会降低以io为瓶颈的系统的速度，因此平 均吞吐量会受到一些影响而下降。
+
+  综合以上两种情况，hbase.hregion.max.filesize不宜过大或过小，256MB或许是一个更理想的经验参数。对于离线型的应用，调整为128MB会更加合适一些，而在线应用除非对split机制进行改造，否则不应该低于256MB
+
+2autoflush=false的影响
+
+无论是官方还是很多blog都提倡为了提高hbase的写入速度而在应用代码中设置autoflush=false，然后lz认为在在线应用中应该谨慎进行该设置。原因如下：
+
+a autoflush=false的原理是当客户端提交delete或put请求时，将该请求在客户端缓存，直到数据超过2M(hbase.client.write.buffer决定)或用户执行了hbase.flushcommits()时才向regionserver 提交请求。因此即使htable.put()执行返回成功，也并非说明请求真的成功了。假如还没有达到该缓存而client崩溃，该部分数据将由于未发送到regionserver而丢失。这对于零容忍的在线服务是不可接受的。
+
+b autoflush=true虽然会让写入速度下降2-3倍，但是对于很多在线应用来说这都是必须打开的，也正是hbase为什么让它默认值为true的 原因。当该值为true时，每次请求都会发往regionserver,而regionserver接收到请求后第一件事就是写hlog，因此对io的要 求是非常高的，为了提高hbase的写入速度，应该尽可能高地提高io吞吐量，比如增加磁盘、使用raid卡、减少replication因子数等
+
+3 从性能的角度谈table中family和qualifier的设置
+
+对于传统关系型数据库中的一张table，在业务转换到hbase上建模时，从性能的角度应该如何设置family和qualifier呢？
+
+最极端的，①每一列都设置成一个family，②一个表仅有一个family，所有列都是其中的一个qualifier，那么有什么区别呢？
+
+从读的方面考虑：
+
+family越多，那么获取每一个cell数据的优势越明显，因为io和网络都减少了。
+
+如果只有一个family，那么每一次读都会读取当前rowkey的所有数据，网络和io上会有一些损失。
+
+当然如果要获取的是固定的几列数据，那么把这几列写到一个family中比分别设置family要更好，因为只需一次请求就能拿回所有数据。
+
+从写的角度考虑：
+
+首先，内存方面来说，对于一个Region，会为每一个表的每一个Family分配一个Store，而每一个Store，都会分配一个MemStore，所以更多的family会消耗更多的内存。
+
+其次，从flush和compaction方面说，目前版本的hbase，在flush和compaction都是以region为单位的，也就是 说当一个family达到flush条件时，该region的所有family所属的memstore都会flush一次，即使memstore中只有很少的数据也会触发flush而生成小文件。这样就增加了compaction发生的机率，而compaction也是以region为单位的，这样就很容 易发生compaction风暴从而降低系统的整体吞吐量。
+
+第三，从split方面考虑，由于hfile是以family为单位的，因此对于多个family来说，数据被分散到了更多的hfile中，减小了 split发生的机率。这是把双刃剑。更少的split会导致该region的体积比较大，由于balance是以region的数目而不是大小为单位来 进行的，因此可能会导致balance失效。而从好的方面来说，更少的split会让系统提供更加稳定的在线服务。而坏处我们可以通过在请求的低谷时间进行人工的split和balance来避免掉。
+
+   因此对于写比较多的系统，如果是离线应该，我们尽量只用一个family好了，但如果是在线应用，那还是应该根据应用的情况合理地分配family。
+
+4hbase.regionserver.handler.count
+
+RegionServer端开启的RPC监听器实例个数，也即RegionServer能够处理的IO请求线程数。默认是10.
+
+此参数与内存息息相关。该值设置的时候，以监控内存为主要参考。
+
+对于 单次请求内存消耗较高的Big PUT场景（大容量单次PUT或设置了较大cache的scan，均属于BigPUT）或ReigonServer的内存比较紧张的场景，可以设置的相对较小。
+
+对于 单次请求内存消耗低，TPS（TransactionPerSecond，每秒事务处理量）要求非常高的场景，可以设置的相对大些。
+
+1.2 Row Key
+HBase中row key用来检索表中的记录，支持以下三种方式：
+
+·        通过单个row key访问：即按照某个row key键值进行get操作；
+
+·        通过row key的range进行scan：即通过设置startRowKey和endRowKey，在这个范围内进行扫描；
+
+·        全表扫描：即直接扫描整张表中所有行记录。
+
+在HBase中，row key可以是任意字符串，最大长度64KB，实际应用中一般为10~100bytes，存为byte[]字节数组，一般设计成定长的。
+
+row key是按照字典序存储，因此，设计row key时，要充分利用这个排序特点，将经常一起读取的数据存储到一块，将最近可能会被访问的数据放在一块。
+
+举个例子：如果最近写入HBase表中的数据是最可能被访问的，可以考虑将时间戳作为row key的一部分，由于是字典序排序，所以可以使用Long.MAX_VALUE –timestamp作为row key，这样能保证新写入的数据在读取时可以被快速命中。
+
+1.3 Column Family
+不要在一张表里定义太多的column family。目前Hbase并不能很好的处理超过2~3个column family的表。因为某个columnfamily在flush的时候，它邻近的column family也会因关联效应被触发flush，最终导致系统产生更多的I/O。感兴趣的同学可以对自己的HBase集群进行实际测试，从得到的测试结果数据验证一下。
+
+1.4 In Memory
+创建表的时候，可以通过HColumnDescriptor.setInMemory(true)将表放到RegionServer的缓存中，保证在读取的时候被cache命中。
+
+1.5 Max Version
+创建表的时候，可以通过HColumnDescriptor.setMaxVersions(int maxVersions)设置表中数据的最大版本，如果只需要保存最新版本的数据，那么可以设置setMaxVersions(1)。
+
+1.6 Time To Live
+创建表的时候，可以通过HColumnDescriptor.setTimeToLive(inttimeToLive)设置表中数据的存储生命期，过期数据将自动被删除，例如如果只需要存储最近两天的数据，那么可以设置 setTimeToLive(2* 24 * 60 * 60)。
+
+1.7 Compact & Split
+在HBase中，数据在更新时首先写入WAL 日志(HLog)和内存(MemStore)中，MemStore中的数据是排序的，当MemStore累计到一定阈值时，就会创建一个新的 MemStore，并且将老的MemStore添加到flush队列，由单独的线程flush到磁盘上，成为一个StoreFile。于此同时，系统会在zookeeper中记录一个redo point，表示这个时刻之前的变更已经持久化了(minorcompact)。
+
+StoreFile是只读的，一旦创建后就不可以再修改。因此Hbase的更新其实是不断追加的操作。当一个Store中的StoreFile达到一定的阈值后，就会进行一次合并(majorcompact)，将对同一个key的修改合并到一起，形成一个大的StoreFile，当StoreFile的大小达到一定阈值后，又会对 StoreFile进行分割(split)，等分为两个StoreFile。
+
+由于对表的更新是不断追加的，处理读请求时，需要访问Store中全部的StoreFile和MemStore，将它们按照row key进行合并，由于StoreFile和MemStore都是经过排序的，并且StoreFile带有内存中索引，通常合并过程还是比较快的。
+
+实际应用中，可以考虑必要时手动进行majorcompact，将同一个row key的修改进行合并形成一个大的StoreFile。同时，可以将StoreFile设置大些，减少split的发生。
+
+2.2 HTable参数设置
+2.2.1 Auto Flush
+通过调用HTable.setAutoFlush(false)方法可以将HTable写客户端的自动flush关闭，这样可以批量写入数据到 HBase，而不是有一条put就执行一次更新，只有当put填满客户端写缓存时，才实际向HBase服务端发起写请求。默认情况下auto flush是开启的。
+
+2.2.2 Write Buffer
+通过调用HTable.setWriteBufferSize(writeBufferSize)方法可以设置HTable客户端的写buffer大小，如果新设置的buffer小于当前写buffer中的数据时，buffer将会被flush到服务端。其中，writeBufferSize的单位是 byte字节数，可以根据实际写入数据量的多少来设置该值。
+
+2.2.3 WAL Flag
+在HBae中，客户端向集群中的RegionServer提交数据时（Put/Delete操作），首先会先写WAL（Write Ahead Log）日志（即HLog，一个RegionServer上的所有Region共享一个HLog），只有当WAL日志写成功后，再接着写 MemStore，然后客户端被通知提交数据成功；如果写WAL日志失败，客户端则被通知提交失败。这样做的好处是可以做到RegionServer宕机后的数据恢复。
+
+因此，对于相对不太重要的数据，可以在Put/Delete操作时，通过调用Put.setWriteToWAL(false)或Delete.setWriteToWAL(false)函数，放弃写WAL日志，从而提高数据写入的性能。
+
+值得注意的是：谨慎选择关闭WAL日志，因为这样的话，一旦RegionServer宕机，Put/Delete的数据将会无法根据WAL日志进行恢复。
+
+2.3 批量写
+通过调用HTable.put(Put)方法可以将一个指定的row key记录写入HBase，同样HBase提供了另一个方法：通过调用HTable.put(List<Put>)方法可以将指定的row key列表，批量写入多行记录，这样做的好处是批量执行，只需要一次网络I/O开销，这对于对数据实时性要求高，网络传输RTT高的情景下可能带来明显的性能提升。
+
+2.4 多线程并发写
+在客户端开启多个HTable写线程，每个写线程负责一个HTable对象的flush操作，这样结合定时flush和写 buffer（writeBufferSize），可以既保证在数据量小的时候，数据可以在较短时间内被flush（如1秒内），同时又保证在数据量大的时候，写buffer一满就及时进行flush。下面给个具体的例子：
+
+3.2 HTable参数设置
+3.2.1 Scanner Caching
+通过调用HTable.setScannerCaching(intscannerCaching)可以设置HBase scanner一次从服务端抓取的数据条数，默认情况下一次一条。通过将此值设置成一个合理的值，可以减少scan过程中next()的时间开销，代价是 scanner需要通过客户端的内存来维持这些被cache的行记录。
+
+3.2.2 Scan AttributeSelection
+scan时指定需要的ColumnFamily，可以减少网络传输数据量，否则默认scan操作会返回整行所有Column Family的数据。
+
+3.2.3 Close ResultScanner
+通过scan取完数据后，记得要关闭ResultScanner，否则RegionServer可能会出现问题（对应的Server资源无法释放）。
+
+3.3 批量读
+通过调用HTable.get(Get)方法可以根据一个指定的row key获取一行记录，同样HBase提供了另一个方法：通过调用HTable.get(List)方法可以根据一个指定的row key列表，批量获取多行记录，这样做的好处是批量执行，只需要一次网络I/O开销，这对于对数据实时性要求高而且网络传输RTT高的情景下可能带来明显的性能提升。
+
+3.4 多线程并发读
+在客户端开启多个HTable读线程，每个读线程负责通过HTable对象进行get操作。下面是一个多线程并发读取HBase，获取店铺一天内各分钟PV值的例子：
+
+ 
+
+ 
+
+3.5 缓存查询结果
+对于频繁查询HBase的应用场景，可以考虑在应用程序中做缓存，当有新的查询请求时，首先在缓存中查找，如果存在则直接返回，不再查询HBase；否则对HBase发起读请求查询，然后在应用程序中将查询结果缓存起来。至于缓存的替换策略，可以考虑LRU等常用的策略。
+
+3.6 Blockcache
+HBase上Regionserver的内存分为两个部分，一部分作为Memstore，主要用来写；另外一部分作为BlockCache，主要用于读。
+
+写请求会先写入Memstore，Regionserver会给每个region提供一个Memstore，当Memstore满64MB以后，会启动 flush刷新到磁盘。当Memstore的总大小超过限制时（heapsize *hbase.regionserver.global.memstore.upperLimit * 0.9），会强行启动flush进程，从最大的Memstore开始flush直到低于限制。
+
+读请求先到Memstore中查数据，查不到就到BlockCache中查，再查不到就会到磁盘上读，并把读的结果放入BlockCache。由于 BlockCache采用的是LRU策略，因此BlockCache达到上限(heapsize *hfile.block.cache.size * 0.85)后，会启动淘汰机制，淘汰掉最老的一批数据。
+
+一个Regionserver上有一个BlockCache和N个Memstore，它们的大小之和不能大于等于heapsize *0.8，否则HBase不能启动。默认BlockCache为0.2，而Memstore为0.4。对于注重读响应时间的系统，可以将 BlockCache设大些，比如设置BlockCache=0.4，Memstore=0.39，以加大缓存的命中率。
+
+有关BlockCache机制，请参考这里：HBase的Block cache，HBase的blockcache机制，hbase中的缓存的计算与使用。
+
+4.数据计算
+4.1 服务端计算
+Coprocessor运行于HBaseRegionServer服务端，各个Regions保持对与其相关的coprocessor实现类的引用，coprocessor类可以通过 RegionServer上classpath中的本地jar或HDFS的classloader进行加载。
+
+目前，已提供有几种coprocessor：
+
+Coprocessor：提供对于region管理的钩子，例如region的open/close/split/flush/compact等；
+RegionObserver：提供用于从客户端监控表相关操作的钩子，例如表的get/put/scan/delete等；
+Endpoint：提供可以在region上执行任意函数的命令触发器。一个使用例子是RegionServer端的列聚合，这里有代码示例。
+以上只是有关coprocessor的一些基本介绍，本人没有对其实际使用的经验，对它的可用性和性能数据不得而知。感兴趣的同学可以尝试一下，欢迎讨论。
+
+4.2 写端计算
+4.2.1 计数
+HBase本身可以看作是一个可以水平扩展的Key-Value存储系统，但是其本身的计算能力有限（Coprocessor可以提供一定的服务端计算），因此，使用HBase时，往往需要从写端或者读端进行计算，然后将最终的计算结果返回给调用者。举两个简单的例子：
+
+PV计算：通过在HBase写端内存中，累加计数，维护PV值的更新，同时为了做到持久化，定期（如1秒）将PV计算结果同步到HBase中，这样查询端最多会有1秒钟的延迟，能看到秒级延迟的PV结果。
+分钟PV计算：与上面提到的PV计算方法相结合，每分钟将当前的累计PV值，按照rowkey + minute作为新的rowkey写入HBase中，然后在查询端通过scan得到当天各个分钟以前的累计PV值，然后顺次将前后两分钟的累计PV值相减，就得到了当前一分钟内的PV值，从而最终也就得到当天各个分钟内的PV值。
+
+4.2.2 去重
+对于UV的计算，就是个去重计算的例子。分两种情况：
+
+如果内存可以容纳，那么可以在Hash表中维护所有已经存在的UV标识，每当新来一个标识时，通过快速查找Hash确定是否是一个新的UV，若是则UV值加1，否则UV值不变。另外，为了做到持久化或提供给查询接口使用，可以定期（如1秒）将UV计算结果同步到HBase中。
+如果内存不能容纳，可以考虑采用Bloom Filter来实现，从而尽可能的减少内存的占用情况。除了UV的计算外，判断URL是否存在也是个典型的应用场景。
+
+4.3 读端计算
+如果对于响应时间要求比较苛刻的情况（如单次http请求要在毫秒级时间内返回），个人觉得读端不宜做过多复杂的计算逻辑，尽量做到读端功能单一化：即从 HBaseRegionServer读到数据（scan或get方式）后，按照数据格式进行简单的拼接，直接返回给前端使用。当然，如果对于响应时间要求一般，或者业务特点需要，也可以在读端进行一些计算逻辑。
+
+5.总结
+作为一个Key-Value存储系统，HBase并不是万能的，它有自己独特的地方。因此，基于它来做应用时，我们往往需要从多方面进行优化改进（表设计、读表操作、写表操作、数据计算等），有时甚至还需要从系统级对HBase进行配置调优，更甚至可以对HBase本身进行优化。这属于不同的层次范畴。
+
+总之，概括来讲，对系统进行优化时，首先定位到影响你的程序运行性能的瓶颈之处，然后有的放矢进行针对行的优化。如果优化后满足你的期望，那么就可以停止优化；否则继续寻找新的瓶颈之处，开始新的优化，直到满足性能要求。
+
+ 
+
+ 
+
+ 
+
+HBase实现分页核心代码
+· Scan scan = new Scan();  
+
+· scan.setStartRow(getBytes(startRow));  
+
+· scan.setStopRow(getBytes(stopRow));  
+
+·  scan.setCaching(1000);  
+
+· scan.setCacheBlocks(false);  
+
+· ResultScanner scanner = table.getScanner(scan);  
+
+· int i = 0;  
+
+· List<byte[]> rowList = new LinkedList<byte[]>();  
+
+·  // 遍历扫描器对象， 并将需要查询出来的数据row key取出  
+
+· for (Result result : scanner)  
+
+·  {  
+
+·     String row = toStr(result.getRow());  
+
+·     if (i >= firstPage && i < endPage)  
+
+·     {  
+
+·         rowList.add(getBytes(row));  
+
+·     }  
+
+·     i++;  
+
+·  }  
+
+·  // 获取取出的row key的GET对象  
+
+· List<Get> getList = getList(rowList);  
+
+· Result[] results = table.get(getList);  
+
+· List<Map<String, String>> mapList  
+
+·  // 遍历结果  
+
+· for (Result result : results)  
+
+·  {  
+
+·     Map<byte[], byte[]> fmap = packFamilyMap(result);  
+
+·     Map<String, String> rmap = packRowMap(fmap);  
+
+·     mapList.add(rmap);  
+
+·  }  
+
+· List<Get> getList(List<byte[]> rowList)  
+
+·  {  
+
+·     List<Get> list = new LinkedList<Get>();  
+
+·     for (byte[] row : rowList)  
+
+·     {  
+
+·         Get get = new Get(row);  
+
+·    
+
+·         get.addColumn(getBytes("family1"), getBytes("column1"));  
+
+·         get.addColumn(getBytes("family1"), getBytes("column2"));  
+
+·         get.addColumn(getBytes("family2"), getBytes("column1"));  
+
+·         list.add(get);  
+
+·     }  
+
+·     return list;  
+
+·  }  
+
+· Map<byte[], byte[]> packFamilyMap(Result result)  
+
+·  {  
+
+·     Map<byte[], byte[]> dataMap = null;  
+
+·     dataMap = new LinkedHashMap<byte[], byte[]>();  
+
+·     dataMap.putAll(result.getFamilyMap(getBytes("family1")));  
+
+·     dataMap.putAll(result.getFamilyMap(getBytes("family2")));  
+
+·     return dataMap;  
+
+·  }  
+
+· Map<byte[], byte[]> packFamilyMap(Result result)  
+
+·  {  
+
+·     Map<byte[], byte[]> dataMap = null;  
+
+·     dataMap = new LinkedHashMap<byte[], byte[]>();  
+
+·     dataMap.putAll(result.getFamilyMap(getBytes("family1")));  
+
+·     dataMap.putAll(result.getFamilyMap(getBytes("family2")));  
+
+·     return dataMap;  
+
+·  }  
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+在配置hadoop HA的时候,遇到了一个常见的问题,但网上的解说各样情况却都不能解决我的这个问题。困扰了我一个上午。现在把解决办法share出来跟大家一起分享:
+
+问题：
+
+我在向配好的HADOOP的hdfs上传文件时，出错了:
+
+[user01@ocdc41 hadoop-2.0.0-cdh4.2.1]$ hadoop fs -putzookeeper.out /surq
+
+14/05/06 10:25:36 WARN util.NativeCodeLoader: Unable toload native-hadoop library for your platform... using builtin-java classeswhere applicable
+
+14/05/06 10:25:38 INFO hdfs.DFSClient: Exception increateBlockOutputStream
+
+java.io.EOFException: Premature EOF: no length prefixavailable
+
+        atorg.apache.hadoop.hdfs.protocol.HdfsProtoUtil.vintPrefixed(HdfsProtoUtil.java:171)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.createBlockOutputStream(DFSOutputStream.java:1105)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.nextBlockOutputStream(DFSOutputStream.java:1039)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.run(DFSOutputStream.java:487)
+
+14/05/06 10:25:38 INFO hdfs.DFSClient: AbandoningBP-622801129-10.1.251.41-1399285006530:blk_4261023822429760593_1050
+
+14/05/06 10:25:38 INFO hdfs.DFSClient: Excluding datanode10.1.251.41:50011
+
+14/05/06 10:25:38 INFO hdfs.DFSClient: Exception increateBlockOutputStream
+
+java.io.EOFException: Premature EOF: no length prefixavailable
+
+        atorg.apache.hadoop.hdfs.protocol.HdfsProtoUtil.vintPrefixed(HdfsProtoUtil.java:171)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.createBlockOutputStream(DFSOutputStream.java:1105)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.nextBlockOutputStream(DFSOutputStream.java:1039)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.run(DFSOutputStream.java:487)
+
+14/05/06 10:25:38 INFO hdfs.DFSClient: AbandoningBP-622801129-10.1.251.41-1399285006530:blk_-7023175867132719132_1051
+
+14/05/06 10:25:38 INFO hdfs.DFSClient: Excluding datanode10.1.251.46:50011
+
+14/05/06 10:25:38 INFO hdfs.DFSClient: Exception increateBlockOutputStream
+
+java.io.EOFException: Premature EOF: no length prefixavailable
+
+        atorg.apache.hadoop.hdfs.protocol.HdfsProtoUtil.vintPrefixed(HdfsProtoUtil.java:171)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.createBlockOutputStream(DFSOutputStream.java:1105)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.nextBlockOutputStream(DFSOutputStream.java:1039)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.run(DFSOutputStream.java:487)
+
+14/05/06 10:25:38 INFO hdfs.DFSClient: AbandoningBP-622801129-10.1.251.41-1399285006530:blk_318554080720123545_1052
+
+14/05/06 10:25:38 INFO hdfs.DFSClient: Excluding datanode10.1.251.45:50011
+
+14/05/06 10:25:38 WARN hdfs.DFSClient: DataStreamerException
+
+org.apache.hadoop.ipc.RemoteException(java.io.IOException):File /surq/zookeeper.out._COPYING_ could only be replicated to 0 nodes insteadof minReplication (=1).  There are 3 datanode(s) running and 3 node(s) areexcluded in this operation.
+
+        atorg.apache.hadoop.hdfs.server.blockmanagement.BlockManager.chooseTarget(BlockManager.java:1327)
+
+        atorg.apache.hadoop.hdfs.server.namenode.FSNamesystem.getAdditionalBlock(FSNamesystem.java:2278)
+
+        atorg.apache.hadoop.hdfs.server.namenode.NameNodeRpcServer.addBlock(NameNodeRpcServer.java:480)
+
+        at org.apache.hadoop.hdfs.protocolPB.ClientNamenodeProtocolServerSideTranslatorPB.addBlock(ClientNamenodeProtocolServerSideTranslatorPB.java:297)
+
+        atorg.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos$ClientNamenodeProtocol$2.callBlockingMethod(ClientNamenodeProtocolProtos.java:44080)
+
+        atorg.apache.hadoop.ipc.ProtobufRpcEngine$Server$ProtoBufRpcInvoker.call(ProtobufRpcEngine.java:453)
+
+        atorg.apache.hadoop.ipc.RPC$Server.call(RPC.java:1002)
+
+        at org.apache.hadoop.ipc.Server$Handler$1.run(Server.java:1695)
+
+        atorg.apache.hadoop.ipc.Server$Handler$1.run(Server.java:1691)
+
+        atjava.security.AccessController.doPrivileged(Native Method)
+
+        atjavax.security.auth.Subject.doAs(Subject.java:415)
+
+        at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1408)
+
+        atorg.apache.hadoop.ipc.Server$Handler.run(Server.java:1689)
+
+        atorg.apache.hadoop.ipc.Client.call(Client.java:1225)
+
+        atorg.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:202)
+
+        atcom.sun.proxy.$Proxy9.addBlock(Unknown Source)
+
+        atorg.apache.hadoop.hdfs.protocolPB.ClientNamenodeProtocolTranslatorPB.addBlock(ClientNamenodeProtocolTranslatorPB.java:290)
+
+        atsun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+
+        atsun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+
+        atsun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+
+        atjava.lang.reflect.Method.invoke(Method.java:606)
+
+        atorg.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:164)
+
+        atorg.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:83)
+
+        atcom.sun.proxy.$Proxy10.addBlock(Unknown Source)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.locateFollowingBlock(DFSOutputStream.java:1176)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.nextBlockOutputStream(DFSOutputStream.java:1029)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.run(DFSOutputStream.java:487)
+
+put: File /surq/zookeeper.out._COPYING_ could only bereplicated to 0 nodes instead of minReplication (=1).  There are 3datanode(s) running and 3 node(s) are excluded in this operation.
+
+14/05/06 10:25:38 ERROR hdfs.DFSClient: Failed to closefile /surq/zookeeper.out._COPYING_
+
+org.apache.hadoop.ipc.RemoteException(java.io.IOException):File /surq/zookeeper.out._COPYING_ could only be replicated to 0 nodes insteadof minReplication (=1).  There are 3 datanode(s) running and 3 node(s) areexcluded in this operation.
+
+        atorg.apache.hadoop.hdfs.server.blockmanagement.BlockManager.chooseTarget(BlockManager.java:1327)
+
+        at org.apache.hadoop.hdfs.server.namenode.FSNamesystem.getAdditionalBlock(FSNamesystem.java:2278)
+
+        atorg.apache.hadoop.hdfs.server.namenode.NameNodeRpcServer.addBlock(NameNodeRpcServer.java:480)
+
+        atorg.apache.hadoop.hdfs.protocolPB.ClientNamenodeProtocolServerSideTranslatorPB.addBlock(ClientNamenodeProtocolServerSideTranslatorPB.java:297)
+
+        atorg.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos$ClientNamenodeProtocol$2.callBlockingMethod(ClientNamenodeProtocolProtos.java:44080)
+
+        atorg.apache.hadoop.ipc.ProtobufRpcEngine$Server$ProtoBufRpcInvoker.call(ProtobufRpcEngine.java:453)
+
+        atorg.apache.hadoop.ipc.RPC$Server.call(RPC.java:1002)
+
+        atorg.apache.hadoop.ipc.Server$Handler$1.run(Server.java:1695)
+
+        at org.apache.hadoop.ipc.Server$Handler$1.run(Server.java:1691)
+
+        atjava.security.AccessController.doPrivileged(Native Method)
+
+        atjavax.security.auth.Subject.doAs(Subject.java:415)
+
+        atorg.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1408)
+
+        atorg.apache.hadoop.ipc.Server$Handler.run(Server.java:1689)
+
+        atorg.apache.hadoop.ipc.Client.call(Client.java:1225)
+
+        atorg.apache.hadoop.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:202)
+
+        atcom.sun.proxy.$Proxy9.addBlock(Unknown Source)
+
+        atorg.apache.hadoop.hdfs.protocolPB.ClientNamenodeProtocolTranslatorPB.addBlock(ClientNamenodeProtocolTranslatorPB.java:290)
+
+        atsun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+
+        atsun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+
+        atsun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+
+        atjava.lang.reflect.Method.invoke(Method.java:606)
+
+        atorg.apache.hadoop.io.retry.RetryInvocationHandler.invokeMethod(RetryInvocationHandler.java:164)
+
+        atorg.apache.hadoop.io.retry.RetryInvocationHandler.invoke(RetryInvocationHandler.java:83)
+
+        atcom.sun.proxy.$Proxy10.addBlock(Unknown Source)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.locateFollowingBlock(DFSOutputStream.java:1176)
+
+        atorg.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.nextBlockOutputStream(DFSOutputStream.java:1029)
+
+        at org.apache.hadoop.hdfs.DFSOutputStream$DataStreamer.run(DFSOutputStream.java:487)
+
+ 
+
+解决办法: 关于 INFOorg.apache.hadoop.hdfs.DFSClient: Exception in createBlockOutputStreamjava.io.EOFException: Premature EOF: no length prefix available 由于DataNode终止了block的传输，所以client会出现这种错误，导致client无法正常数据读写. 从Excluding datanode 10.1.251.41:50011入手问题分析： 个人认为:namenode和datanade通信用到的全是ip:port,而在配置中的dfs.datanode.address=localhost:50011,local对应的是127.0.0.1本机之外是无法访问的 故要把local改为datanode的IP才行，以因为是集群把每台datanode的datanode.address改为自已的IP不现实，因此需要修改./etc/hosts文件。
+ 
+ 1、修改/etc/hosts 修改各datanode的hosts,定义一个统一的名hostip 127.0.0.1 localhost10.1.251.41 ocdc41 hostip 
+
+ 2、修改hdfs-site.xml文件: dfs.datanode.address=localhost:50011改为hostip:500113、重启datanode一切，再向HDFS传文件成功。 
+
+ 
+
+ 
+
+ 
+
+hbase 实时系统HBase读写优化--大量写入无障碍在使用hbase过程中发现在写入hbase的数据量很大
+
+ 
+
+ 
+
+实时系统HBase读写优化--大量写入无障碍
+
+　　在使用hbase过程中发现在写入hbase的数据量很大时，经常发生写不进去的情况。而我们基于hbase的应用是对实时性要求很高的，一旦hbase不能读写则会大大影响系统的使用。下面将记录hbase写优化的过程。
+
+　　1.禁止Major Compaction
+　　在hbase进行Major Compaction时，该region将合并所有的storefile，因此整个region都不可读，所有对此region的查询都会block。 HBase默认一天左右执行一次Major Compaction。我们将Major Compaction禁掉并用Cron脚本每天在系统空闲时对所有表执行major compaction。
+
+　　Major Compaction的配置：
+
+　　<property><name>hbase.hregion.majorcompaction</name><value>0</value> </property>
+
+　　默认是1天，每个region会在创建时以当前时间初始化regionMajorCompactionTime，并将下一次的major compaction时间设为1+-0.2天。配置中将此值设为0禁止majorcompaction。
+
+　　major_compaction的脚本：取出所有table，一一执行major_compact：
+
+　　TMP_FILE=tmp_tables TABLES_FILE=tables.txt echo "list" |hbase shell > tmp_tables sleep 2 sed '1,6d' $TMP_FILE | tac | sed '1,2d' |tac > $TABLES_FILE sleep 2 for table in $(cat $TABLES_FILE); do echo"major_compact '$table'" | hbase shell sleep 10 done
+
+2.禁掉split
+　　hbase通过split region实现水平的sharding，但在split的过程中旧的region会下线，新region还会做compaction，中间有一段时间大量的数据不能被读写，这对于我们这种online系统是不能忍受的。我们同样禁掉自动的split，而在晚上系统空闲时执行我们的splittool手动 的split。
+
+　　禁止split的配置：
+
+　　<property> <name>hbase.hregion.max.filesize</name><value>536870912000</value> </property>
+
+配置项的含义是当region的大小大于设定值后hbase就会开始split，我们将此值设为500G，我们认为在白天系统繁忙时一个region不会超过此大小，在晚上时运行splittool将region分割开。
+
+　　splittool的逻辑比较简单。遍历所有region的信息，如果region大小大于某值（比如1G）则split该region，这样 为一轮split，如果一轮后没有大于某值的region则结束，如果还有大于某个值的region则继续新一轮split，直到没有region大于某 个阈值为止。这里提一下判断split完成的方法：通过检查hdfs上旧region的文件夹是否被清除来判断split是否结束。
+
+　　3.设置blockingStoreFiles
+　　这个参数的重要性是在我们的性能测试中发现的。我们禁掉major_compaction和split后理论上写入应该无障碍了，但在测试中发现写入单个region速度大于10M/s时还是会出现长时间无法写入的情况。通过查看log，我们发现了这行log“Waited 90314ms on acompaction to clean up 'too many store  files'”，通过查看代码发现原来是blockingStoreFiles这个参数在作怪。
+
+　　在flushRegion时会检测当前store中hfile的数量是否大于此值，如果大于则会block数据的写入，等待其他线程将hfile compact掉。这样，如果写入速度超过compact的速度，hbase就会阻止该region的数据写入。
+
+　　private boolean flushRegion(final FlushRegionEntry fqe) { HRegionregion = fqe.region; if (!fqe.region.getRegionInfo().isMetaRegion() &&isTooManyStoreFiles(region)) { if (fqe.isMaximumWait(this.blockingWaitTime)) {LOG.info("Waited " + (System.currentTimeMillis() - fqe.createTime) +"ms on a compaction to clean up 'too many store files'; waited " +"long enough... proceeding with flush of " + region.getRegionNameAsString());}
+
+默认值为7
+
+　　this.blockingStoreFilesNumber =conf.getInt("hbase.hstore.blockingStoreFiles", 7); if(this.blockingStoreFilesNumber == -1) { this.blockingStoreFilesNumber = 1 +conf.getInt("hbaspactionThreshold", 3); }
+
+我们将此值设为很大的值，使得此问题不会block我们的写入。
+
+　　<property> <name>hbase.hstore.blockingStoreFiles</name><value>2100000000</value> </property>
+
+ 
+
+ 
+
+ 
+
+在使用hbase过程中发现在写入hbase的数据量很大时，经常发生写不进去的情况。而我们基于hbase的应用是对实时性要求很高的，一旦hbase不能读写则会大大影响系统的使用。下面将记录hbase写优化的过程。
+
+ 
+
+1.禁止Major Compaction
+
+在hbase进行Major Compaction时，该region将合并所有的storefile，因此整个region都不可读，所有对此region的查询都会block。HBase默认一天左右执行一次Major Compaction。我们将Major Compaction禁掉并用Cron脚本每天在系统空闲时对所有表执行major compaction。
+
+ 
+
+Major Compaction的配置：
+
+[html] viewplaincopy
+
+<span style="font-size:18px;"><property>  
+<name>hbase.hregion.majorcompaction</name>  
+<value>0</value>  
+</property></span>  
+默认是1天，每个region会在创建时以当前时间初始化regionMajorCompactionTime，并将下一次的major compaction时间设为1+-0.2天。配置中将此值设为0禁止major compaction。
+
+ 
+
+major_compaction的脚本：取出所有table，一一执行major_compact：
+
+[java] viewplaincopy
+
+<span style="font-size:18px;">TMP_FILE=tmp_tables  
+TABLES_FILE=tables.txt  
+  
+echo "list" | hbase shell > tmp_tables  
+sleep 2  
+sed '1,6d' $TMP_FILE | tac | sed '1,2d' | tac > $TABLES_FILE  
+sleep 2  
+  
+for table in $(cat $TABLES_FILE); do  
+        echo "major_compact '$table'" | hbase shell  
+        sleep 10  
+done</span>  
+2.禁掉split
+
+hbase通过split region实现水平的sharding，但在split的过程中旧的region会下线，新region还会做compaction，中间有一段时间大量的数据不能被读写，这对于我们这种online系统是不能忍受的。我们同样禁掉自动的split，而在晚上系统空闲时执行我们的splittool手动 的split。
+
+ 
+
+禁止split的配置：
+
+[html] viewplaincopy
+
+<span style="font-size:18px;"> <property>  
+ <name>hbase.hregion.max.filesize</name>  
+ <value>536870912000</value>  
+ </property></span>  
+配置项的含义是当region的大小大于设定值后hbase就会开始split，我们将此值设为500G，我们认为在白天系统繁忙时一个region不会超过此大小，在晚上时运行splittool将region分割开。
+
+ 
+
+splittool的逻辑比较简单。遍历所有region的信息，如果region大 小大于某值（比如1G）则split该region，这样为一轮split，如果一轮后没有大于某值的region则结束，如果还有大于某个值的 region则继续新一轮split，直到没有region大于某个阈值为止。这里提一下判断split完成的方法：通过检查hdfs上旧region的 文件夹是否被清除来判断split是否结束。
+
+ 
+
+3.设置blockingStoreFiles
+
+这个参数的重要性是在我们的性能测试中发现的。我们禁掉major_compaction和split后理论上写入应该无障碍了，但在测试中发现写入单个region速度大于10M/s时还是会出现长时间无法写入的情况。通过查看log，我们发现了这行log“Waited 90314ms on a compaction to cleanup 'too many store  files'”，通过查看代码发现原来是blockingStoreFiles这个参数在作怪。
+
+ 
+
+在flushRegion时会检测当前store中hfile的数量是否大于此值，如果大于则会block数据的写入，等待其他线程将hfile compact掉。这样，如果写入速度超过compact的速度，hbase就会阻止该region的数据写入。
+
+[java] viewplaincopy
+
+<span style="font-size:18px;">private boolean flushRegion(final FlushRegionEntry fqe) {  
+    HRegion region = fqe.region;  
+    if (!fqe.region.getRegionInfo().isMetaRegion() &&  
+        isTooManyStoreFiles(region)) {  
+      if (fqe.isMaximumWait(this.blockingWaitTime)) {  
+        LOG.info("Waited " + (System.currentTimeMillis() - fqe.createTime) +  
+          "ms on a compaction to clean up 'too many store files'; waited " +  
+          "long enough... proceeding with flush of " +  
+          region.getRegionNameAsString());  
+      } </span>  
+默认值为7
+
+[java] viewplaincopy
+
+<span style="font-size:18px;">this.blockingStoreFilesNumber =  
+      conf.getInt("hbase.hstore.blockingStoreFiles", 7);  
+    if (this.blockingStoreFilesNumber == -1) {  
+      this.blockingStoreFilesNumber = 1 +  
+        conf.getInt("hbase.hstore.compactionThreshold", 3);  
+    }</span>  
+ 
+
+我们将此值设为很大的值，使得此问题不会block我们的写入。
+
+[html] viewplaincopy
+
+<span style="font-size:18px;"><property>  
+<name>hbase.hstore.blockingStoreFiles</name>  
+<value>2100000000</value>  
+</property></span>  
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+版本信息： hadoop 2.3.0 hive 0.11.0
+
+
+1. Application Master 无法访问
+
+点击application mater 链接，出现 http 500 错误，java.lang.Connect.exception： 问题是由于设定web ui时，50030 端口对应的ip地址为0.0.0.0，导致applicationmaster 链接无法定位。
+解决办法: yarn-site.xml 文件 <property> <description>The address of the RM webapplication.</description><name>yarn.resourcemanager.webapp.address</name> <value>xxxxxxxxxx:50030</value></property> 这是2.3.0 的里面的一个bug 1811 ，2.4.0已经修复
+
+
+2. History UI 无法访问和 container 打不开
+ 
+
+ 点击 TrackingURL:History无法访问问题是 history service 没有启动解决办法: 配置：选择（xxxxxxxxxx: 作为historysever） <property><name>yarn.log-aggregation-enable</name><value>true</value> </property> <property><name>mapreduce.jobhistory.address</name><value>xxxxxxxxxx::10020</value> </property>
+<property> <name>mapreduce.jobhistory.webapp.address</name><value>xxxxxxxxxx:19888</value> </property>
+sbin/mr-jobhistory-daemon.sh starthistoryserver 相关链接:http://www.iteblog.com/archives/936
+
+
+3 yarn 平台的优化设置 虚拟cpu的个数
+ 
+
+ <property><name>yarn.nodemanager.resource.cpu-vcores</name><value>23</value> </property> 设置使用的内存<property> <name>yarn.nodemanager.resource.memory-mb</name><value>61440</value> <description>the amount of memory on theNodeManager in GB</description> </property> 设置每个任务最大使用的内存<property> <name>yarn.scheduler.maximum-allocation-mb</name><value>49152</value> <source>yarn-default.xml</source></property>
+
+
+4 运行任务 提示： Foundinterface org.apache.hadoop.mapreduce.Counter, but class was expected
+修改pom，重新install <dependency><groupId>org.apache.hadoop</groupId><artifactId>hadoop-common</artifactId><version>2.3.0</version> </dependency> <dependency><groupId>org.apache.hadoop</groupId> <artifactId>hadoop-mapreduce-client-core</artifactId><version>2.3.0</version> </dependency> <dependency><groupId>org.apache.mrunit</groupId><artifactId>mrunit</artifactId><version>1.0.0</version> <classifier>hadoop2</classifier><scope>test</scope> </dependency> jdk 换成1.7
+
+
+
+5 运行任务提示shuffle内存溢出
+ 
+
+Java heap space 2014-05-14 16:44:22,010FATAL [IPC Server handler 4 on 44508]org.apache.hadoop.mapred.TaskAttemptListenerImpl: Task:attempt_1400048775904_0006_r_000004_0 - exited :org.apache.hadoop.mapreduce.task.reduce.Shuffle$ShuffleError: error in shufflein fetcher#3 atorg.apache.hadoop.mapreduce.task.reduce.Shuffle.run(Shuffle.java:134) atorg.apache.hadoop.mapred.ReduceTask.run(ReduceTask.java:376) atorg.apache.hadoop.mapred.YarnChild$2.run(YarnChild.java:168) atjava.security.AccessController.doPrivileged(Native Method) atjavax.security.auth.Subject.doAs(Subject.java:415) atorg.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1548)at org.apache.hadoop.mapred.YarnChild.main(YarnChild.java:163) Caused by:java.lang.OutOfMemoryError: Java heap space atorg.apache.hadoop.io.BoundedByteArrayOutputStream.<init>(BoundedByteArrayOutputStream.java:56)atorg.apache.hadoop.io.BoundedByteArrayOutputStream.<init>(BoundedByteArrayOutputStream.java:46)at org.apache.hadoop.mapreduce.task.reduce.InMemoryMapOutput.<init>(InMemoryMapOutput.java:63)atorg.apache.hadoop.mapreduce.task.reduce.MergeManagerImpl.unconditionalReserve(MergeManagerImpl.java:297)atorg.apache.hadoop.mapreduce.task.reduce.MergeManagerImpl.reserve(MergeManagerImpl.java:287)atorg.apache.hadoop.mapreduce.task.reduce.Fetcher.copyMapOutput(Fetcher.java:411)atorg.apache.hadoop.mapreduce.task.reduce.Fetcher.copyFromHost(Fetcher.java:341)at org.apache.hadoop.mapreduce.task.reduce.Fetcher.run(Fetcher.java:165)
+来源： <http:/xxxxxxxxxx:19888/jobhistory/logs/ST-L09-05-back-tj-yarn15:8034/container_1400048775904_0006_01_000001/job_1400048775904_0006/hadoop/syslog/?start=0>
+解决方法：调低mapreduce.reduce.shuffle.memory.limit.percent的值 默认为0.25 现在调成0.10
+
+参考： http://www.sqlparty.com/yarn%E5%9C%A8shuffle%E9%98%B6%E6%AE%B5%E5%86%85%E5%AD%98%E4%B8%8D%E8%B6%B3%E9%97%AE%E9%A2%98error-in-shuffle-in-fetcher/
+
+6 reduce 任务的log 中间发现：
+
+2014-05-14 17:51:21,835 WARN [Readahead Thread #2]org.apache.hadoop.io.ReadaheadPool: Failed readahead on ifile EINVAL: Invalidargument at org.apache.hadoop.io.nativeio.NativeIO$POSIX.posix_fadvise(NativeMethod) atorg.apache.hadoop.io.nativeio.NativeIO$POSIX.posixFadviseIfPossible(NativeIO.java:263)at org.apache.hadoop.io.nativeio.NativeIO$POSIX$CacheManipulator.posixFadviseIfPossible(NativeIO.java:142)atorg.apache.hadoop.io.ReadaheadPool$ReadaheadRequestImpl.run(ReadaheadPool.java:206)atjava.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)at java.lang.Thread.run(Thread.java:745)
+来源：<http://xxxxxxxxxx:8042/node/containerlogs/container_1400060792764_0001_01_000726/hadoop/syslog/?start=-4096> ps： 错误没有再现，暂无解决方法
+
+
+7 hive 任务
+
+java.lang.InstantiationException: org.antlr.runtime.CommonToken Continuing ...java.lang.RuntimeException: failed to evaluate: <unbound>=Class.new(); 参考:https://issues.apache.org/jira/browse/HIVE-4222s
+
+8 hive 任务自动把join装换mapjoin时内存溢出，
+ 
+
+解决方法：关闭自动装换，11前的版本默认值为false，后面的为true; 在任务脚本里面加上：set hive.auto.convert.join=false; 或者在hive-site.xml 配上为false；出错日志： SLF4J:Actual binding is of type [org.slf4j.impl.Log4jLoggerFactory] 2014-05-1502:40:58 Starting to launch local task to process map join; maximum memory =1011351552 2014-05-15 02:41:00 Processing rows: 200000 Hashtable size: 199999Memory usage: 110092544 rate: 0.109 2014-05-15 02:41:01 Processing rows: 300000Hashtable size: 299999 Memory usage: 229345424 rate: 0.227 2014-05-15 02:41:01Processing rows: 400000 Hashtable size: 399999 Memory usage: 170296368 rate:0.168 2014-05-15 02:41:01 Processing rows: 500000 Hashtable size: 499999 Memoryusage: 285961568 rate: 0.283 2014-05-15 02:41:02 Processing rows: 600000Hashtable size: 599999 Memory usage: 408727616 rate: 0.404 2014-05-15 02:41:02Processing rows: 700000 Hashtable size: 699999 Memory usage: 333867920 rate:0.33 2014-05-15 02:41:02 Processing rows: 800000 Hashtable size: 799999 Memoryusage: 459541208 rate: 0.454 2014-05-15 02:41:03 Processing rows: 900000Hashtable size: 899999 Memory usage: 391524456 rate: 0.387 2014-05-15 02:41:03Processing rows: 1000000 Hashtable size: 999999 Memory usage: 514140152 rate:0.508 2014-05-15 02:41:03 Processing rows: 1029052 Hashtable size: 1029052Memory usage: 546126888 rate: 0.54 2014-05-15 02:41:03 Dump the hashtable intofile:file:/tmp/hadoop/hive_2014-05-15_14-40-53_413_3806680380261480764/-local-10002/HashTable-Stage-4/MapJoin-mapfile01--.hashtable2014-05-15 02:41:06 Upload 1 File to:file:/tmp/hadoop/hive_2014-05-15_14-40-53_413_3806680380261480764/-local-10002/HashTable-Stage-4/MapJoin-mapfile01--.hashtableFile size: 68300588 2014-05-15 02:41:06 End of local task; Time Taken: 8.301sec. Execution completed successfully Mapred Local Task Succeeded . Convert theJoin into MapJoin Mapred Local Task Succeeded . Convert the Join into MapJoinLaunching Job 2 out of 2
+log出错日志： 2014-05-15 13:52:54,007 FATAL [main]org.apache.hadoop.mapred.YarnChild: Error running child :java.lang.OutOfMemoryError: Java heap space atjava.io.ObjectInputStream$HandleTable.grow(ObjectInputStream.java:3465) atjava.io.ObjectInputStream$HandleTable.assign(ObjectInputStream.java:3271) atjava.io.ObjectInputStream.readOrdinaryObject(ObjectInputStream.java:1789) atjava.io.ObjectInputStream.readObject0(ObjectInputStream.java:1350) at java.io.ObjectInputStream.readObject(ObjectInputStream.java:370)at java.util.HashMap.readObject(HashMap.java:1183) atsun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) atsun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57) atsun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)at java.lang.reflect.Method.invoke(Method.java:606) atjava.io.ObjectStreamClass.invokeReadObject(ObjectStreamClass.java:1017) atjava.io.ObjectInputStream.readSerialData(ObjectInputStream.java:1893) atjava.io.ObjectInputStream.readOrdinaryObject(ObjectInputStream.java:1798) atjava.io.ObjectInputStream.readObject0(ObjectInputStream.java:1350) atjava.io.ObjectInputStream.readObject(ObjectInputStream.java:370) at org.apache.hadoop.hive.ql.exec.persistence.HashMapWrapper.initilizePersistentHash(HashMapWrapper.java:128)atorg.apache.hadoop.hive.ql.exec.MapJoinOperator.loadHashTable(MapJoinOperator.java:194)at org.apache.hadoop.hive.ql.exec.MapJoinOperator.cleanUpInputFileChangedOp(MapJoinOperator.java:212)atorg.apache.hadoop.hive.ql.exec.Operator.cleanUpInputFileChanged(Operator.java:1377)atorg.apache.hadoop.hive.ql.exec.Operator.cleanUpInputFileChanged(Operator.java:1381)
+来源：<http://xxxxxxxxxx:19888/jobhistory/logs/ST-L09-10-back-tj-yarn21:8034/container_1400064445468_0013_01_000002/attempt_1400064445468_0013_m_000000_0/hadoop/syslog/?start=0>
+
+
+
+9 hive运行时提示： failed to evaluate: <unbound>=Class.new();
+ 
+
+，升级到0.13.0 参考https://issues.apache.org/jira/browse/HIVE-4222 https://issues.apache.org/jira/browse/HIVE-3739SLF4J: Seehttp://www.slf4j.org/codes.html#multiple_bindings for an explanation.SLF4J:Actual binding is of type [org.slf4j.impl.Log4jLoggerFactory]OKTime taken: 2.28secondsjava.lang.InstantiationException: org.antlr.runtime.CommonTokenContinuing...java.lang.RuntimeException: failed to evaluate:<unbound>=Class.new();Continuing ...java.lang.InstantiationException:org.antlr.runtime.CommonTokenContinuing ...java.lang.RuntimeException: failedto evaluate: <unbound>=Class.new();Continuing...java.lang.InstantiationException: org.antlr.runtime.CommonTokenContinuing...java.lang.RuntimeException: failed to evaluate:<unbound>=Class.new();Continuing ...java.lang.InstantiationException:org.antlr.runtime.CommonTokenContinuing ...java.lang.RuntimeException: failedto evaluate: <unbound>=Class.new();Continuing...java.lang.InstantiationException: org.antlr.runtime.CommonTokenContinuing...
+这个应该升级后能解决，不过不知道为什么我升级12.0 和13.0 ，一运行就报错fileNotfundHIVE_PLANxxxxxxxxx 。ps （参考11）应该是我配置有问题，暂无解决方法。
+
+
+
+10 hive 创建表或者数据库的时候 Couldnt obtain a new sequence (unique id) : You have an error inyour SQL syntax
+ 
+
+ 解决方法：这个是因为hive元数据库的名字是yarn-hive,sql中中划线是关键词，所以sql错误。把数据库名去掉中划线，问题解决。错误日志： FAILED: Error in metadata: MetaException(message:javax.jdo.JDOException:Couldnt obtain a new sequence (unique id) : You have an error in your SQLsyntax; check the manual that corresponds to your MySQL server version for theright syntax to use near '-hive.`SEQUENCE_TABLE` WHERE`SEQUENCE_NAME`='org.apache.hadoop.hive.metastore.m' at line 1 atorg.datanucleus.api.jdo.NucleusJDOHelper.getJDOExceptionForNucleusException(NucleusJDOHelper.java:596)atorg.datanucleus.api.jdo.JDOPersistenceManager.jdoMakePersistent(JDOPersistenceManager.java:732)at org.datanucleus.api.jdo.JDOPersistenceManager.makePersistent(JDOPersistenceManager.java:752)atorg.apache.hadoop.hive.metastore.ObjectStore.createTable(ObjectStore.java:643)at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) atsun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)atsun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)at java.lang.reflect.Method.invoke(Method.java:606) atorg.apache.hadoop.hive.metastore.RetryingRawStore.invoke(RetryingRawStore.java:111)at com.sun.proxy.$Proxy14.createTable(Unknown Source) atorg.apache.hadoop.hive.metastore.HiveMetaStore$HMSHandler.create_table_core(HiveMetaStore.java:1070)atorg.apache.hadoop.hive.metastore.HiveMetaStore$HMSHandler.create_table_with_environment_context(HiveMetaStore.java:1103)at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) atsun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)at java.lang.reflect.Method.invoke(Method.java:606) atorg.apache.hadoop.hive.metastore.RetryingHMSHandler.invoke(RetryingHMSHandler.java:103)at com.sun.proxy.$Proxy15.create_table_with_environment_context(Unknown Source)at org.apache.hadoop.hive.metastore.HiveMetaStoreClient.createTable(HiveMetaStoreClient.java:466)atorg.apache.hadoop.hive.metastore.HiveMetaStoreClient.createTable(HiveMetaStoreClient.java:455)at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)atsun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)at java.lang.reflect.Method.invoke(Method.java:606) atorg.apache.hadoop.hive.metastore.RetryingMetaStoreClient.invoke(RetryingMetaStoreClient.java:74)at com.sun.proxy.$Proxy16.createTable(Unknown Source) atorg.apache.hadoop.hive.ql.metadata.Hive.createTable(Hive.java:597) atorg.apache.hadoop.hive.ql.exec.DDLTask.createTable(DDLTask.java:3777) at org.apache.hadoop.hive.ql.exec.DDLTask.execute(DDLTask.java:256)at org.apache.hadoop.hive.ql.exec.Task.executeTask(Task.java:144) atorg.apache.hadoop.hive.ql.exec.TaskRunner.runSequential(TaskRunner.java:57) atorg.apache.hadoop.hive.ql.Driver.launchTask(Driver.java:1362) atorg.apache.hadoop.hive.ql.Driver.execute(Driver.java:1146) atorg.apache.hadoop.hive.ql.Driver.run(Driver.java:952) atshark.SharkCliDriver.processCmd(SharkCliDriver.scala:338) atorg.apache.hadoop.hive.cli.CliDriver.processLine(CliDriver.java:413) atshark.SharkCliDriver$.main(SharkCliDriver.scala:235) atshark.SharkCliDriver.main(SharkCliDriver.scala) NestedThrowablesStackTrace:com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException: You have an error inyour SQL syntax; check the manual that corresponds to your MySQL server versionfor the right syntax to use near '-hive.`SEQUENCE_TABLE` WHERE`SEQUENCE_NAME`='org.apache.hadoop.hive.metastore.m' at line 1 atsun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method) at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:57)atsun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)at java.lang.reflect.Constructor.newInstance(Constructor.java:526) atcom.mysql.jdbc.Util.handleNewInstance(Util.java:406) atcom.mysql.jdbc.Util.getInstance(Util.java:381) atcom.mysql.jdbc.SQLError.createSQLException(SQLError.java:1030) atcom.mysql.jdbc.SQLError.createSQLException(SQLError.java:956) at com.mysql.jdbc.MysqlIO.checkErrorPacket(MysqlIO.java:3558)at com.mysql.jdbc.MysqlIO.checkErrorPacket(MysqlIO.java:3490) atcom.mysql.jdbc.MysqlIO.sendCommand(MysqlIO.java:1959) atcom.mysql.jdbc.MysqlIO.sqlQueryDirect(MysqlIO.java:2109) atcom.mysql.jdbc.ConnectionImpl.execSQL(ConnectionImpl.java:2648) atcom.mysql.jdbc.PreparedStatement.executeInternal(PreparedStatement.java:2077)at com.mysql.jdbc.PreparedStatement.executeQuery(PreparedStatement.java:2228)at org.apache.commons.dbcp.DelegatingPreparedStatement.executeQuery(DelegatingPreparedStatement.java:96)atorg.apache.commons.dbcp.DelegatingPreparedStatement.executeQuery(DelegatingPreparedStatement.java:96)atorg.datanucleus.store.rdbms.ParamLoggingPreparedStatement.executeQuery(ParamLoggingPreparedStatement.java:381)atorg.datanucleus.store.rdbms.SQLController.executeStatementQuery(SQLController.java:504)atorg.datanucleus.store.rdbms.valuegenerator.SequenceTable.getNextVal(SequenceTable.java:197)at org.datanucleus.store.rdbms.valuegenerator.TableGenerator.reserveBlock(TableGenerator.java:190)atorg.datanucleus.store.valuegenerator.AbstractGenerator.reserveBlock(AbstractGenerator.java:305)atorg.datanucleus.store.rdbms.valuegenerator.AbstractRDBMSGenerator.obtainGenerationBlock(AbstractRDBMSGenerator.java:170)atorg.datanucleus.store.valuegenerator.AbstractGenerator.obtainGenerationBlock(AbstractGenerator.java:197)atorg.datanucleus.store.valuegenerator.AbstractGenerator.next(AbstractGenerator.java:105)at org.datanucleus.store.rdbms.RDBMSStoreManager.getStrategyValueForGenerator(RDBMSStoreManager.java:2019)atorg.datanucleus.store.AbstractStoreManager.getStrategyValue(AbstractStoreManager.java:1385)atorg.datanucleus.ExecutionContextImpl.newObjectId(ExecutionContextImpl.java:3727)at org.datanucleus.state.JDOStateManager.setIdentity(JDOStateManager.java:2574)atorg.datanucleus.state.JDOStateManager.initialiseForPersistentNew(JDOStateManager.java:526)atorg.datanucleus.state.ObjectProviderFactoryImpl.newForPersistentNew(ObjectProviderFactoryImpl.java:202)atorg.datanucleus.ExecutionContextImpl.newObjectProviderForPersistentNew(ExecutionContextImpl.java:1326)atorg.datanucleus.ExecutionContextImpl.persistObjectInternal(ExecutionContextImpl.java:2123)at org.datanucleus.ExecutionContextImpl.persistObjectWork(ExecutionContextImpl.java:1972)atorg.datanucleus.ExecutionContextImpl.persistObject(ExecutionContextImpl.java:1820)atorg.datanucleus.ExecutionContextThreadedImpl.persistObject(ExecutionContextThreadedImpl.java:217)at org.datanucleus.api.jdo.JDOPersistenceManager.jdoMakePersistent(JDOPersistenceManager.java:727)atorg.datanucleus.api.jdo.JDOPersistenceManager.makePersistent(JDOPersistenceManager.java:752)atorg.apache.hadoop.hive.metastore.ObjectStore.createTable(ObjectStore.java:643)
+
+
+11 安装hive 12 和13 后，运行任务报错提示：FileNotFoundException: HIVE_PLAN 解决方法：可能是hive一个bug，也可能那里配置错了 ，待解决
+错误日志
+
+2014-05-16 10:27:07,896 INFO [main] org.apache.hadoop.mapred.MapTask:Processing split:Paths:/user/hive/warehouse/game_predata.db/game_login_log/dt=0000-00-00/000000_0:201326592+60792998,/user/hive/warehouse/game_predata.db/game_login_log/dt=0000-00-00/000001_0_copy_1:201326592+58503492,/user/hive/warehouse/game_predata.db/game_login_log/dt=0000-00-00/000001_0_copy_2:67108864+67108864,/user/hive/warehouse/game_predata.db/game_login_log/dt=0000-00-00/000001_0_copy_2:134217728+67108864,/user/hive/warehouse/game_predata.db/game_login_log/dt=0000-00-00/000002_0_copy_1:67108864+67108864InputFormatClass:org.apache.hadoop.mapred.TextInputFormat 2014-05-16 10:27:07,954 WARN [main]org.apache.hadoop.mapred.YarnChild: Exception running child :java.lang.RuntimeException: java.io.FileNotFoundException:HIVE_PLAN14c8af69-0156-4633-9273-6a812eb91a4c (没有那个文件或目录) atorg.apache.hadoop.hive.ql.exec.Utilities.getMapRedWork(Utilities.java:230) atorg.apache.hadoop.hive.ql.io.HiveInputFormat.init(HiveInputFormat.java:255) atorg.apache.hadoop.hive.ql.io.HiveInputFormat.pushProjectionsAndFilters(HiveInputFormat.java:381)at org.apache.hadoop.hive.ql.io.HiveInputFormat.pushProjectionsAndFilters(HiveInputFormat.java:374)atorg.apache.hadoop.hive.ql.io.CombineHiveInputFormat.getRecordReader(CombineHiveInputFormat.java:540)atorg.apache.hadoop.mapred.MapTask$TrackedRecordReader.<init>(MapTask.java:168)at org.apache.hadoop.mapred.MapTask.runOldMapper(MapTask.java:409) atorg.apache.hadoop.mapred.MapTask.run(MapTask.java:342) atorg.apache.hadoop.mapred.YarnChild$2.run(YarnChild.java:168) atjava.security.AccessController.doPrivileged(Native Method) atjavax.security.auth.Subject.doAs(Subject.java:415) atorg.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1548)at org.apache.hadoop.mapred.YarnChild.main(YarnChild.java:163) Caused by:java.io.FileNotFoundException: HIVE_PLAN14c8af69-0156-4633-9273-6a812eb91a4c (没有那个文件或目录) atjava.io.FileInputStream.open(Native Method) atjava.io.FileInputStream.<init>(FileInputStream.java:146) atjava.io.FileInputStream.<init>(FileInputStream.java:101) atorg.apache.hadoop.hive.ql.exec.Utilities.getMapRedWork(Utilities.java:221) ...12 more 2014-05-16 10:27:07,957 INFO [main] org.apache.hadoop.mapred.Task:Runnning cleanup for the task
+来源：<http://sxxxxxxxxxx:19888/jobhistory/logs/ST-L10-10-back-tj-yarn10:8034/container_1400136017046_0026_01_000030/attempt_1400136017046_0026_m_000000_0/hadoop>
+
+12java.lang.OutOfMemoryError: GC overhead limit exceeded
+ 
+
+分析：这个是JDK6新添的错误类型。是发生在GC占用大量时间为释放很小空间的时候发生的，是一种保护机制。解决方案是，关闭该功能，可以添加JVM的启动参数来限制使用内存： -XX:-UseGCOverheadLimit
+添加位置是：mapred-site.xml 里新增项：mapred.child.java.opts 内容：-XX:-UseGCOverheadLimit
+来源： <http://www.cnblogs.com/niocai/archive/2012/07/31/2616252.html> 参考14
+
+
+
+13hive hive 0.10.0为了执行效率考虑，简单的查询
+ 
+
+就是只是select，不带count,sum,group by这样的，都不走map/reduce，直接读取hdfs文件进行filter过滤。这样做的好处就是不新开mr任务，执行效率要提高不少，但是不好的地方就是用户界面不友好，有时候数据量大还是要等很长时间，但是又没有任何返回。
+
+改这个很简单，在hive-site.xml里面有个配置参数叫
+
+hive.fetch.task.conversion
+
+将这个参数设置为more，简单查询就不走map/reduce了，设置为minimal，就任何简单select都会走map/reduce。
+
+
+来源：<http://slaytanic.blog.51cto.com/2057708/1170431> 参考14 
+
+14 运行mr 任务的时候提示：
+
+错误日志
+
+Container [pid=30486,containerID=container_1400229396615_0011_01_000012] is running beyond physical memory limits. Current usage: 1.0 GB of 1 GB physical memory used; 1.7 GB of 2.1 GB virtual memory used. Killing container. Dump of the process-tree for container_1400229396615_0011_01_000012 : |- PID PPID PGRPID SESSID CMD_NAME USER_MODE_TIME(MILLIS) SYSTEM_TIME(MILLIS) VMEM_USAGE(BYTES) RSSMEM_USAGE(PAGES) FULL_CMD_LINE |- 30501 30486 30486 30486 (java) 3924 322 1720471552 262096 /opt/jdk1.7.0_55/bin/java -Djava.net.preferIPv4Stack=true -Dhadoop.metrics.log.level=WARN -Xmx1024m -XX:-UseGCOverheadLimit -Djava.io.tmpdir=/home/nodemanager/local/usercache/hadoop/appcache/application_1400229396615_0011/container_1400229396615_0011_01_000012/tmp -Dlog4j.configuration=container-log4j.properties -Dyarn.app.container.log.dir=/home/hadoop/logs/nodemanager/logs/application_1400229396615_0011/container_1400229396615_0011_01_000012 -Dyarn.app.container.log.filesize=0 -Dhadoop.root.logger=INFO,CLA org.apache.hadoop.mapred.YarnChild 30.30.30.39 47925 attempt_1400229396615_0011_m_000000_0 12 |- 30486 12812 30486 30486 (bash) 0 0 108642304 302 /bin/bash -c /opt/jdk1.7.0_55/bin/java -Djava.net.preferIPv4Stack=true -Dhadoop.metrics.log.level=WARN -Xmx1024m -XX:-UseGCOverheadLimit -Djava.io.tmpdir=/home/nodemanager/local/usercache/hadoop/appcache/application_1400229396615_0011/container_1400229396615_0011_01_000012/tmp -Dlog4j.configuration=container-log4j.properties -Dyarn.app.container.log.dir=/home/hadoop/logs/nodemanager/logs/application_1400229396615_0011/container_1400229396615_0011_01_000012 -Dyarn.app.container.log.filesize=0 -Dhadoop.root.logger=INFO,CLA org.apache.hadoop.mapred.YarnChild 30.30.30.39 47925 attempt_1400229396615_0011_m_000000_0 12 1>/home/hadoop/logs/nodemanager/logs/application_1400229396615_0011/container_1400229396615_0011_01_000012/stdout 2>/home/hadoop/logs/nodemanager/logs/application_1400229396615_0011/container_1400229396615_0011_01_000012/stderr Container killed on request. Exit code is 143 Container exited with a non-zero exit code 143
+ 
+ 
+来源： <http://xxxxxxxxxx:50030/proxy/application_1400229396615_0011/mapreduce/attempts/job_1400229396615_0011/m/FAILED> 解决方法： 下面的参数是关于mapreduce任务运行时的内存设置，如果有的任务需要可单独配置，就统一配置了。如果有container被kill 可以适当调高 mapreduce.map.memory.mb map任务的最大内存 mapreduce.map.java.opts -Xmx1024M map任务jvm的参数 mapreduce.reduce.memory.mb reduce任务的最大内存 mapreduce.reduce.java.opts -Xmx2560M reduce任务jvm的参数 mapreduce.task.io.sort.mb 512 Higher memory-limit while sorting data for efficiency.
+摘自：http://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/ClusterSetup.html#Configuring_the_Hadoop_Daemons_in_Non-Secure_Mode 关闭内存检测进程： 是在搞不清楚 问什么有的任务就物理内存200多MB ，虚拟内存就飙到2.7G了，估计内存检测进程有问题，而且我有的任务是需要大内存的，为了进度，索性关了，一下子解决所有内存问题。 yarn.nodemanager.pmem-check-enabled false yarn.nodemanager.vmem-check-enabled false
+ 
+ 
+15 yarn 的webUI 有关的调整：
+ 
+
+1 cluser 页面 application的starttime 和finishtime 都是 UTC格式，改成 +8区时间也就是北京时间。
+./share/hadoop/yarn/hadoop-yarn-common-2.3.0.jar 里面的webapps.static.yarn.dt.plugins.js
+或者源码包里面：/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-common/src/main/resources/webapps/static/yarn.dt.plugins.js
+添加代码：
+
+Date.prototype.Format = function (fmt) { //author: meizz 
+    var o = {
+        "M+": this.getMonth() + 1, //月份 
+        "d+": this.getDate(), //日 
+        "h+": this.getHours(), //小时 
+        "m+": this.getMinutes(), //分 
+        "s+": this.getSeconds(), //秒 
+        "q+": Math.floor((this.getMonth() + 3) / 3), //季度 
+        "S": this.getMilliseconds() //毫秒 
+    };
+    if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+    for (var k in o)
+    if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+    return fmt;
+};
+同时按下面修改下的代码
+
+function renderHadoopDate(data, type, full) 
+{ if (type === 'display' || type === 'filter') { if(data === '0') { return "N/A"; } 
+return new Date(parseInt(data)).Format("yyyy-MM-dd hh:mm:ss"); }
+ 
+
+16 MR1的任务用到DistributedCache 的任务迁移到MR2上出错。原来我里面使用文件名区分不同的缓存文件，MR2里面分发文件以后只保留的文件名如：
+ 
+application_xxxxxxx/container_14xxxx/part-m-00000
+application_xxxxxxx/container_14xxxx/part-m-00001
+application_xxxxxxx/container_14xxxx/00000_0
+解决方法：每个缓存文件添加符号链接，链接为父级名字+文件名
+
+DistributedCache.addCacheFile(new URI(path.toString() + "#"+ path.getParent().getName() + "_" + path.getName()),
+configuration);
+ 
+这样就会生成带有文件名的缓存文件
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+For our example cluster, we have the minimum RAM for a Container(yarn.scheduler.minimum-allocation-mb) = 2 GB. We’ll thus assign 4 GB for Maptask Containers, and 8 GB for Reduce tasks Containers.
+
+In mapred-site.xml:
+
+mapreduce.map.memory.mb: 4096
+
+mapreduce.reduce.memory.mb: 8192
+
+Each Container will run JVMs for the Map and Reduce tasks. The JVM heapsize should be set to lower than the Map and Reduce memory defined above, sothat they are within the bounds of the Container memory allocated by YARN.
+
+In mapred-site.xml:
+
+mapreduce.map.java.opts: -Xmx3072m
+
+mapreduce.reduce.java.opts: -Xmx6144m
+
+The above settings configure the upper limit of the physical RAM thatMap and Reduce tasks will use.
+
+To sum it up:
+
+In YARN, you should use the mapreduce configs, not the mapred ones. EDIT: This comment is not applicable anymore now that you've edited your question.
+What you are configuring is actually how much you want to request, not what is the max to allocate.
+The max limits are configured with the java.opts settings listed above.
+ 
+
+2 down vote
+
+I can't comment on the accepted answer, due to low reputation. However, I would like to add, this behavior is by design. The NodeManager is killing your container. It sounds like you are trying to use hadoop streaming which is running as a child process of the map-reduce task. The NodeManager monitors the entire process tree of the task and if it eats up more memory than the maximum set in mapreduce.map.memory.mb or mapreduce.reduce.memory.mb respectively, we would expect the Nodemanager to kill the task, otherwise your task is stealing memory belonging to other containers, which you don't want.
+
+ 
+
+ 
+
+yarn_scheduler_minimum_allocation_mb
+
+ 
+
+修改
+
+ 
+
+ 
+
+ 
+
+ 
+
+ERROR tool.ImportTool: Imported Failed: Attempted togenerate class with no columns!
+
+ 
+
+这个原因是因为：-username micmiu  用户名这个参数，需要把用户名大写：-username MICMIU ，再执行就ok了。
+
+ 
+
+ 
+
+ 
+
+Initialization failed for block pool Block pool
+2013-06-08 17:57:27,519 FATAL org.apache.hadoop.hdfs.server.datanode.DataNode: Initialization failed for block pool Block pool BP-770817654-172.17.50.119-1370685416301 (storage id DS-803461661-172.17.50.119-50010-1370681848198) service to localhost/127.0.0.1:9000
+java.io.IOException: Incompatible clusterIDs in /usr/hadoop/tmp/dfs/data: namenode clusterID = CID-cd47cf1e-0f81-41b0-97df-7407db9f1fa5; datanode clusterID = CID-0462092f-2740-40a4-bf96-246be2efc49f
+        at org.apache.hadoop.hdfs.server.datanode.DataStorage.doTransition(DataStorage.java:390)
+        at org.apache.hadoop.hdfs.server.datanode.DataStorage.recoverTransitionRead(DataStorage.java:190)
+        at org.apache.hadoop.hdfs.server.datanode.DataStorage.recoverTransitionRead(DataStorage.java:218)
+        at org.apache.hadoop.hdfs.server.datanode.DataNode.initStorage(DataNode.java:851)
+        at org.apache.hadoop.hdfs.server.datanode.DataNode.initBlockPool(DataNode.java:822)
+        at org.apache.hadoop.hdfs.server.datanode.BPOfferService.verifyAndSetNamespaceInfo(BPOfferService.java:279)
+        at org.apache.hadoop.hdfs.server.datanode.BPServiceActor.connectToNNAndHandshake(BPServiceActor.java:218)
+        at org.apache.hadoop.hdfs.server.datanode.BPServiceActor.run(BPServiceActor.java:661)
+        at java.lang.Thread.run(Thread.java:619)
+因为每次namenode format会重新创建一个namenodeId,而存放datanode数据的tmp/dfs/data目录下包含了上次format下的 id,namenode format清空了namenode下的数据,但是没有清除datanode下的数据,导致启动时失败,所要做的就是每次fotmat前,清空tmp一下 的所有目录.
+
+ 
+
+ 
+
+ 
+
+installphase
+安装环境：Ubuntu 12.04.3 LTS
+
+硬件环境：三台服务器，两台namenode，一台datanode，分别如下：
+
+ü 192.168.111.130，主namenode，zookeeper，journalnode，zkfc
+
+ü 192.168.111.131，datanode，zookeeper，journalnode
+
+ü 192.168.111.132，备namenode，zookeeper，journalnode，zkfc
+
+ 
+
+0、首先把各个zookeeper起来，如果zookeeper集群还没有启动的话。
+
+./bin/zkServer.sh start
+
+ 
+
+1、然后在某一个namenode节点执行如下命令，创建命名空间
+
+./bin/hdfs zkfc -formatZK
+
+ 
+
+2、在各个节点用如下命令启日志程序
+
+./sbin/hadoop-daemon.sh start journalnode
+
+ 
+
+3、在主namenode节点用./bin/hadoopnamenode -format格式化namenode和journalnode目录
+
+./bin/hadoop namenode -format mycluster
+
+ 
+
+4、在主namenode节点启动./sbin/hadoop-daemon.shstart namenode进程
+
+./sbin/hadoop-daemon.sh start namenode
+
+ 
+
+5、在备节点执行第一行命令，这个是把备namenode节点的目录格式化并把元数据从主namenode节点copy过来，并且这个命令不会把journalnode目录再格式化了！然后用第二个命令启动备namenode进程！
+
+./bin/hdfs namenode –bootstrapStandby
+
+./sbin/hadoop-daemon.sh start namenode
+
+ 
+
+6、在两个namenode节点都执行以下命令
+
+./sbin/hadoop-daemon.sh start zkfc
+
+ 
+
+7、在所有datanode节点都执行以下命令启动datanode
+
+./sbin/hadoop-daemon.sh start datanode
+
+ 
+
+ 
+
+ 
+
+准备记录下我在学习和工作中遇到的hbase报错信息及解决方案。
+
+ 
+
+ 
+
+ 
+
+描述：HMaster启动之后自动挂掉，并且master的log里出现“TableExistsException: hbase:namespace”字样
+很可能是更换了Hbase的版本过后zookeeper还保留着上一次的Hbase设置，所以造成了冲突。
+
+ 
+
+解决：zookeeper还保留着上一次的Hbase设置，所以造成了冲突。删除zookeeper信息，重启之后就没问题了
+
+1.切换到zookeeper的bin目录；
+
+2.执行$sh zkCli.sh
+
+输入‘ls /’
+
+4.输入‘rmr /hbase’（这个是递归删除，新版的zookeeper不支持这个命令，必须按照目录一个一个子目录删）
+
+5.退出
+
+重启hbase即可。
+
+ 
+
+ 
+
+ 
+
+原文地址：RSA host key has just been changed and fail to log on作者：whfwind
+
+when I ssh to log on the server,
+
+there is a error msg: 
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+@    WARNING: REMOTE HOSTIDENTIFICATION HAS CHANGED!     @
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+IT IS POSSIBLE THAT SOMEONE IS DOINGSOMETHING NASTY!
+
+Someone could be eavesdropping on you rightnow (man-in-the-middle attack)!
+
+It is also possible that the RSA host keyhas just been changed.
+
+The fingerprint for the RSA key sent by theremote host is
+
+28:5d:a3:42:1f:ac:d5:2b:9a:6a:b1:28:b1:6b:55:f8.
+
+Please contact your system administrator.
+
+Add correct host key in/home/whfwind/.ssh/known_hosts to get rid of this message.
+
+Offending key in/home/whfwind/.ssh/known_hosts:2
+
+RSA host key for 192.168.100.5 has changedand you have requested strict checking.
+
+Host key verification failed.
+
+ 
+
+then I searched on the internet, so Icollected here:
+
+you just need to delete or annote the lineof your home ~/.ssh/known_host file of the IP you have failed logged 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The directory is alreadylocked
+ 
+
+运行  ：hadoop namenode -format 报错误信息如下：
+14/05/15 17:13:35 INFO common.Storage: Cannot lock storage /usr/hadoop/dfs/name. The directory is already locked.
+14/05/15 17:13:35 ERROR namenode.NameNode: java.io.IOException: Cannot lockstorage /usr/hadoop/dfs/name. The directory is already locked.
+        atorg.apache.hadoop.hdfs.server.common.Storage$StorageDirectory.lock(Storage.java:602)
+        atorg.apache.hadoop.hdfs.server.namenode.FSImage.format(FSImage.java:1321)
+        at org.apache.hadoop.hdfs.server.namenode.FSImage.format(FSImage.java:1339)
+        atorg.apache.hadoop.hdfs.server.namenode.NameNode.format(NameNode.java:1164)
+        atorg.apache.hadoop.hdfs.server.namenode.NameNode.createNameNode(NameNode.java:1271)
+        atorg.apache.hadoop.hdfs.server.namenode.NameNode.main(NameNode.java:1288)
+
+解决方法：
+[root@localhost hadoop-1.0.3]# chown -R root:123456 /usr/hadoop
+
+ root为当前登录用户名，123456：为登录密码
+
+其中：cat conf/core-site.xml
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl"href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+        <property>
+               <name>hadoop.tmp.dir</name>
+               <value>/usr/hadoop</value>
+        </property>
+        <property>
+               <name>fs.default.name</name>
+               <value>hdfs://192.168.0.109:9000</value>
+        </property>
+
+</configuration>
+
+ 
+
+ 
+
+ 
+
+2、 DataNode不能启动：
+ 
+
+在客户端日志显示 namenode namespaceID = 1713611278; datanode namespaceID = 596511341
+
+这个问题基本上是因为在namenode端多次运行hadoop namenode –format 导致的。在hadoop的core-site.xml文件中（不同的hadoop版本名字会有不同）找 到<name>hadoop.tmp.dir</name>，清空对应的文件夹。举例：
+
+[hadoop@hadoop-datanode1 hadoop]$ cat core-site.xml<?xml version="1.0"?><?xml-stylesheet type="text/xsl"href="configuration.xsl"?><!--Put site-specific property overrides in this file. --><configuration><!--globalproperties --><property><name>hadoop.tmp.dir</name><value>/usr/hadoop/tmp</value></property>
+
+清空
+
+[hadoop@hadoop-datanode1 tmp]$ rm -rf /usr/hadoop/tmp/*
+
+然后重新启动hadoop，在datanode端用jps看是否datanode已经启动了。
+
+ 
+
+3、通过命令和查看日志文件查看hadoop启动和运行情况
+在NameNode端，可以通过
+
+tail -100/var/log/hadoop/hadoop/hadoop-hadoop-namenode-hadoop-namenode.log
+
+查看NameNode的运行日志
+
+在DataNode端也可以通过
+
+cat/var/log/hadoop/hadoop/hadoop-hadoop-datanode-hadoop-datanode1.log
+
+查看DataNode的运行日志。
+
+通过jps命令分别在datanode和namenode端运行，查看已启动的服务。
+
+ 
+
+ 
+
+4、ERRORorg.apache.hadoop.hdfs.server.datanode.DataNode: java.io.IOException:Incompatible namespaceIDs in
+
+ ERROR org.apache.hadoop.hdfs.server.datanode.DataNode:java.io.IOException: Incompatible namespaceIDs in /usr/hadoop/dfs/data:namenode namespaceID = 1988494166; datanode namespaceID = 1906089544
+
+ 
+
+导致datanode启动不了。
+
+原因:每次namenode format会重新创建一个namenodeId,而dfs.data.dir参数配置的目录中包含的是上次format创建的id,和dfs.name.dir参数配置的目录中的id不一致。namenodeformat清空了namenode下的数据,但是没有清空datanode下的数据,导致启动时失败,所要做的就是每次fotmat前,清空dfs.data.dir参数配置的目录.
+格式化hdfs的命令
+
+Shell代码 
+
+hadoop namenode -format 
+ 
+
+5、Warning: $HADOOP_HOME is deprecated.hadoop1.0.4解决方法
+启动Hadoop时报了一个警告信息，我安装的Hadoop版本是hadoop1.0.4，具体警告信息如下：
+
+Shell代码 
+
+[root@localhost hadoop-1.0.4]# ./bin/start-all.sh  
+Warning: $HADOOP_HOME is deprecated. 
+网上的说法是因为Hadoop本身对HADOOP_HOME做了判断，具体在bin/hadoop和bin/hadoop-config.sh里。在hadoop-config.sh里有如下的配置：
+
+Shell代码
+
+if [ "$HADOOP_HOME_WARN_SUPPRESS" ="" ] && [ "$HADOOP_HOME" !="" ]; then 
+  echo "Warning: \$HADOOP_HOME is deprecated."1>&2 
+  echo 1>&2 
+fi 
+对于这个警告问题，解决方法如下：
+
+1.注释掉hadoop-config.sh里的上面给出的这段if fi配置（不推荐）
+
+2.在当前用户home/.bash_profile里增加一个环境变量：
+
+vi .bash_profile
+
+在文件中输入：
+
+export HADOOP_HOME_WARN_SUPPRESS=1 / true  ?自己试试
+
+注：修改完.bash_profile后需要执行source操作使其生效
+
+Shell代码 
+
+[root@localhost ~]# source .bash_profile 
+执行完后我们可以检验一下配置是否成功，重新执行start-all.sh脚本：
+
+Shell代码 
+
+[root@localhost hadoop-1.0.4]# ./bin/start-all.sh  
+starting namenode, logging to /root/hadoop-1.0.4/libexec/../logs/hadoop-root-namenode-localhost.out 
+localhost: starting datanode, logging to /root/hadoop-1.0.4/libexec/../logs/hadoop-root-datanode-localhost.out 
+localhost: starting secondarynamenode, logging to /root/hadoop-1.0.4/libexec/../logs/hadoop-root-secondarynamenode-localhost.out 
+starting jobtracker, logging to /root/hadoop-1.0.4/libexec/../logs/hadoop-root-jobtracker-localhost.out 
+localhost: starting tasktracker, logging to /root/hadoop-1.0.4/libexec/../logs/hadoop-root-tasktracker-localhost.out 
+没有出现Warning: $HADOOP_HOME is deprecated，说明问题已经解决。
+
+ 
+
+6、Hadoop MapReduce输出结果中文乱码问题解决
+  在Reduce程序的
+
+public void reduce(Text key, Iterable<Text> values, Contextcontext)    throws IOException, InterruptedException
+
+的方法最后写入文件时， 对内容进行转码为GBK，如下程序代码：
+
+       Text record = new Text();
+    record.set(line.toString().getBytes("GBK"));//输出为中文
+    context.write(record,null);
+
+ 
+
+ 
+
+ 
+
+YARN常见异常
+异常1：
+2012-05-16 16:18:42,468 WARNorg.apache.hadoop.yarn.server.nodemanager.containermanager.launcher.ContainerLaunch:Failed to launch container.
+
+java.io.FileNotFoundException: File/tmp/nm-local-dir/usercache/a/appcache/application_1337150856633_0016 does notexist
+
+? ? ? ? atorg.apache.hadoop.fs.RawLocalFileSystem.getFileStatus(RawLocalFileSystem.java:449)
+
+? ? ? ? atorg.apache.hadoop.fs.FileSystem.primitiveMkdir(FileSystem.java:864)
+
+? ? ? ? atorg.apache.hadoop.fs.DelegateToFileSystem.mkdir(DelegateToFileSystem.java:143)
+
+? ? ? ? atorg.apache.hadoop.fs.FilterFs.mkdir(FilterFs.java:189)
+
+? ? ? ? atorg.apache.hadoop.fs.FileContext$4.next(FileContext.java:700)
+
+? ? ? ? atorg.apache.hadoop.fs.FileContext$4.next(FileContext.java:697)
+
+? ? ? ? atorg.apache.hadoop.fs.FileContext$FSLinkResolver.resolve(FileContext.java:2319)
+
+? ? ? ? at org.apache.hadoop.fs.FileContext.mkdir(FileContext.java:697)
+
+原因A:
+
+yarn-site.xml中参数yarn.nodemanager.local-dirs和yarn.nodemanager.log-dirs使用
+
+默认路径（/tmp/..），导致将磁盘空间撑爆
+
+原因B:
+
+在org.apache.hadoop.yarn.server.nodemanager.DefaultContainerExecutor文件中，创建目录方法在默认情况下需要创建的目录父目录不存在则失败，具体代码如下
+
+?
+
+lfs.mkdir(containerDir, null, true);
+异常2：
+2012-05-16 09:56:57,078 INFOorg.apache.hadoop.yarn.server.nodemanager.containermanager.localizer.ResourceLocalizationService:Localizer failed
+
+java.lang.ArithmeticException: / by zero
+
+? ? ? ? at org.apache.hadoop.fs.LocalDirAllocator$AllocatorPerContext.getLocalPathForWrite(LocalDirAllocator.java:355)
+
+? ? ? ? atorg.apache.hadoop.fs.LocalDirAllocator.getLocalPathForWrite(LocalDirAllocator.java:150)
+
+? ? ? ? at org.apache.hadoop.fs.LocalDirAllocator.getLocalPathForWrite(LocalDirAllocator.java:131)
+
+? ? ? ? atorg.apache.hadoop.fs.LocalDirAllocator.getLocalPathForWrite(LocalDirAllocator.java:115)
+
+? ? ? ? atorg.apache.hadoop.yarn.server.nodemanager.LocalDirsHandlerService.getLocalPathForWrite(LocalDirsHandlerService.java:257)
+
+? ? ? ? atorg.apache.hadoop.yarn.server.nodemanager.containermanager.localizer.ResourceLocalizationService$LocalizerRunner.run(ResourceLocalizationService.java:854)
+
+?
+
+原因：
+
+该错误是由于无法创建本地文件而产生的，可能会由上述磁盘空间不足导致,重定向上面提到的两个参数即可
+
+异常3：
+查看log没有明显的ERROR，但存在类似以下描述的日志
+
+2012-05-16 13:08:20,876 INFOorg.apache.hadoop.yarn.server.nodemanager.NodeStatusUpdaterImpl: Sending outstatus for container: container_id {, app_attempt_id {, application_id {, id:18, cluster_timestamp: 1337134318909, }, attemptId: 1, }, id: 6, }, state:C_COMPLETE, diagnostics: "Container[pid=15641,containerID=container_1337134318909_0018_01_000006] is runningbeyond virtual memory limits. Current usage: 32.1mb of 1.0gb physical memory used; 6.2gb of2.1gb virtual memory used. Killing container.\nDump of theprocess-tree for container_1337134318909_0018_01_000006 :\n\t|- PID PPID PGRPIDSESSID CMD_NAME USER_MODE_TIME(MILLIS) SYSTEM_TIME(MILLIS) VMEM_USAGE(BYTES)RSSMEM_USAGE(PAGES) FULL_CMD_LINE\n\t|- 15641 26354 15641 15641 (java) 36 26686339072 8207 /home/zhouchen.zm/jdk1.6.0_23/bin/java
+
+?
+
+原因：
+
+该错误是YARN的 虚拟内存计算方式导致，上例中用户程序申请的内存为1Gb，YARN根据此值乘以一个比例（默认为2.1）得出申请的虚拟内存的值，当YARN计算的用户 程序所需虚拟内存值大于计算出来的值时，就会报出以上错误。调节比例值可以解决该问题。具体参数为：yarn-site.xml中的yarn.nodemanager.vmem-pmem-ratio
+
+ 
+
+hadoop一些错误
+ 
+
+错误1：bin/hadoop dfs 不能正常启动，持续提示：
+
+INFO ipc.Client: Retrying connect to server: localhost/127.0.0.1:9000. Alreadytried 0 time(s). 
+原因：由于 dfs 的部分文件默认保存在tmp文件夹，在系统重启时被删除。 
+解决：修改core-site.xml 的 hadoop.tmp.dir配置文件路径：/home/hadoop/tmp。 
+
+
+错误2：hadoop出现了一些问题。用$ bin/hadoop dfsadmin -report 测试的时候，发现dfs没有加载。
+ 
+显示如下： 
+         Configured Capacity: 0 (0 KB) 
+         Present Capacity: 0 (0 KB) 
+         DFS Remaining: 0 (0 KB) 
+         DFS Used: 0 (0 KB) 
+         DFS Used%: ?% 
+         Under replicated blocks: 0 
+         Blocks with corrupt replicas:0 
+         Missing blocks: 0 
+         查看日志： 
+         ERRORorg.apache.hadoop.hdfs.server.datanode.DataNode: java.io.IOException:Incompatible namespaceIDs in /home/hadoop/data: namenode namespaceID=      2033006627; datanode namespaceID = 1589898341 
+        经分析，是由于namenodenamespaceID = 2033006627;和datanode namespaceID = 1589898341 不一致造成原因。 
+        修改了namenodenamespaceID = 1589898341 可以使用，但是重启之后，又不可以用了。 
+最后解决方案：删除hadoop用户下的name文件夹，data文件夹，tmp文件夹，temp文件里的内容，然后重新执行namenode命令。 
+（在datanode的存储数据结果中，最大的数据结构是storage，实现类中用版本控制信息。如果hadoop调整文件结果布局，version就会改变。以保证文件结构和应用一致）； 
+重启电脑之后，正常。 
+
+
+错误3：File /home/hadoop/tmp/mapred/system/jobtracker.info could only bereplicated to 0 nodes, instead of 1
+
+出现此错误，一般发生在datanode与namenode还没有进行连接，就开始往hdfs系统上put数据了。稍等待一会，就可以了。 
+也可以使用：hadoop dfsadmin –report命令查看集群的状态。 
+
+
+错误4： 
+每次启动总有部分datanade不能去全部启动，查看日志文件，显示为： 
+ERROR org.apache.hadoop.hdfs.server.datanode.DataNode:java.net.UnknownHostException: zgchen-ubutun: zgchen-ubutun atjava.net.InetAddress.getLocalHost(InetAddress.java:1426)。
+
+分析：这是由于 datanode 找不到服务host引起的。 
+解决：通过查找/etc/hostname 找到hostname；比如：ubuntu。 
+然后找到/etc/hosts ，添加：127.0.1.1 ubuntu 
+
+
+错误5： 
+java.lang.OutOfMemoryError: GC overhead limit exceeded 
+
+分析：这个是JDK6新添的错误类型。是发生在GC占用大量时间为释放很小空间的时候发生的，是一种保护机制。解决方案是，关闭该功能，可以添加JVM的启动参数来限制使用内存： -XX:-UseGCOverheadLimit 
+添加位置是：mapred-site.xml 里新增项：mapred.child.java.opts 内容：-XX:-UseGCOverheadLimit
+java.lang.OutOfMemoryError: Java heap space 
+出现这种异常，明显是jvm内存不够得原因，要修改所有的datanode的jvm内存大小。 
+Java -Xms1024m -Xmx4096m 
+一般jvm的最大内存使用应该为总内存大小的一半，我们使用的8G内存，所以设置为4096m，这一值可能依旧不是最优的值。（其实对于最好设置为真实物理内存大小的0.8） 
+
+
+错误6：Too many fetch-failures
+
+Answer: 
+出现这个问题主要是结点间的连通不够全面。 
+1) 检查 、/etc/hosts 
+   要求本机ip 对应服务器名 
+   要求要包含所有的服务器ip + 服务器名 
+2) 检查 .ssh/authorized_keys 
+   要求包含所有服务器（包括其自身）的public key 
+
+
+错误7：处理速度特别的慢出现map很快但是reduce很慢而且反复出现 reduce=0% 
+
+Answer: 
+结合第二点，然后修改可用内存大小。 
+conf/hadoop-env.sh 中的export HADOOP_HEAPSIZE=4000 
+
+
+错误8：能够启动datanode，但无法访问，也无法结束的错误 
+
+在重新格式化一个新的分布式文件时，需要将你NameNode上所配置的dfs.name.dir这一namenode用来存放NameNode 持久存储名字空间及事务日志的本地文件系统路径删除，同时将各DataNode上的dfs.data.dir的路径 DataNode 存放块数据的本地文件系统路径的目录也删除。如本此配置就是在NameNode上删除/home/hadoop/NameData，在DataNode上删除/home/hadoop/DataNode1和/home/hadoop/DataNode2。这是因为Hadoop在格式化一个新的分布式文件系统时，每个存储的名字空间都对应了建立时间的那个版本（可以查看/home/hadoop /NameData/current目录下的VERSION文件，上面记录了版本信息），在重新格式化新的分布式系统文件时，最好先删除NameData 目录。必须删除各DataNode的dfs.data.dir。这样才可以使namedode和datanode记录的信息版本对应。 
+注意：删除是个很危险的动作，不能确认的情况下不能删除！！做好删除的文件等通通备份！！ 
+
+
+错误9：java.io.IOException: Could not obtain block:blk_194219614024901469_1100 file=/user/hive/warehouse/src_20100924_log/src_20100924_log
+
+出现这种情况大多是结点断了，没有连接上。或者 mapred.tasktracker.map.tasks.maximum 的设置 超过 cpu cores数目，导致出现获取不到文件。 
+
+
+
+错误10：Task Id : attempt_201010291615_0001_m_000234_0, Status : FAILEDError: java.io.IOException: No space left on device
+
+  Task Id : attempt_201010291615_0001_m_000240_0, Status : FAILEDjava.io.IOException: Spill failed 
+  磁盘空间不够，应该分析磁盘空间df -h 检查是否还存在磁盘空间。 
+
+
+错误11:Task Id : attempt_201011011336_0007_m_000001_0, Status : FAILED 
+org.apache.hadoop.hbase.client.RegionOfflineException: region offline:lm,,1288597709144 
+ 
+网上说，将/hbase删除；重启hbase后，可以正常应用了。但是我找不到/hbase目录，只好自己重新删除掉一些hadoop文件，重新生成文件管理系统。 
+  还有一个可能是，配置错了/hbase/conf/hbase-env.sh的HBASE_CLASSPATH，这个默认是不配置的，所以可以不配置。 
+
+
+错误12：org.apache.hadoop.hbase.TableNotFoundException:org.apache.hadoop.hbase.TableNotFoundException: lm
+
+找不到表，hbase启动了，检查一下是否存在需要的Htable。
+
+ 
+
+ 
+
+AMContainer is running beyond virtual memory limits
+ 
+
+ 
+
+ 	
+From the error message, you can see that you're using more virtual memory than your current limit of 1.0gb. This can be resolved in two ways:
+
+Disable Virtual Memory Limit Checking
+
+YARN will simply ignore the limit; in order to do this, add this to your yarn-site.xml:
+
+<property>
+
+  <name>yarn.nodemanager.vmem-check-enabled</name>
+
+  <value>false</value>
+
+  <description>Whether virtual memory limits will be enforced for containers.</description>
+
+</property>
+
+The default for this setting is true.
+
+Increase Virtual Memory to Physical Memory Ratio
+
+In your yarn-site.xml change this to a higher value than is currently set
+
+<property>
+
+  <name>yarn.nodemanager.vmem-pmem-ratio</name>
+
+  <value>5</value>
+
+  <description>Ratio between virtual memory to physical memory when setting memory limits for containers. Container allocations are expressed in terms of physical memory, and virtual memory usage is allowed to exceed this allocation by this ratio.</description>
+
+</property>
+
+The default is 2.1
+
+You could also increase the amount of physical memory you allocate to a container.
+
+Make sure you don't forget to restart yarn after you change the config.
+
+ 
+
+ 
+
+mapred.job.shuffle.input.buffer.percent（R1） 2014-03-11 11:10:55
+
+分类： Hadoop
+
+说明:用来缓存shuffle数据的reduce task heap百分比
+
+Reduce在shuffle阶段对下载来的map数据，并不是立刻就写入磁盘的，而是会先缓存在内存中，然后当使用内存达到一定量的时候才刷入磁盘。
+
+这个内存大小的控制就不像map一样可以通过io.sort.mb来设定了，而是通过另外一个参数来设置：mapred.job.shuffle.input.buffer.percent（default0.7），
+
+这个参数其实是一个百分比，意思是说，shuffile在reduce内存中的数据最多使用内存量为：0.7 × maxHeap of reduce task。
+
+也就是说，如果该reduce task的最大heap使用量（通常通过mapred.child.java.opts来设置，比如设置为-Xmx1024m）的一定比例用来缓存数据。
+
+默认情况下，reduce会使用其heapsize的70%来在内存中缓存数据。
+
+如果reduce的heap由于业务原因调整的比较大，相应的缓存大小也会变大，这也是为什么reduce用来做缓存的参数是一个百分比，而不是一个固定的值了。
+
+ 
+
+ 
+
+修改 hive的内存：
+
+ 
+
+if [ "$SERVICE" = "cli"]; then
+
+   if[ -z "$DEBUG" ]; then
+
+    export HADOOP_OPTS="$HADOOP_OPTS -XX:NewRatio=12 -Xms10m-XX:MaxHeapFreeRatio=40 -XX:MinHeapFreeRatio=15 -XX:+UseParNewGC-XX:-UseGCOverheadLimit"
+
+  else
+
+    export HADOOP_OPTS="$HADOOP_OPTS -XX:NewRatio=12 -Xms10m-XX:MaxHeapFreeRatio=40 -XX:MinHeapFreeRatio=15 -XX:-UseGCOverheadLimit"
+
+   fi
+
+ fi
+
+ 
+
+exportHADOOP_CLIENT_OPTS="-Xms268435456 -Xmx2147483648-Djava.net.preferIPv4Stack=true $HADOOP_CLIENT_OPTS"
+
+ 
+
+ 
+
+ 
+
+以 horntonworks给出推荐配置为蓝本，给出一种常见的Hadoop集群上各组件的内存分配方案。方案最右侧一栏是一个8G VM的分配方案，方案预留1-2G的内存给操作系统，分配4G给Yarn/MapReduce，当然也包括了HIVE，剩余的2-3G是在需要使用HBase时预留给HBase的。
+
+Configuration File
+
+Configuration Setting
+
+Value Calculation
+
+       8G VM (4G For MR)   
+
+yarn-site.xml
+
+yarn.nodemanager.resource.memory-mb
+
+= containers * RAM-per-container
+
+4096
+
+yarn-site.xml
+
+yarn.scheduler.minimum-allocation-mb
+
+= RAM-per-container
+
+1024
+
+yarn-site.xml
+
+yarn.scheduler.maximum-allocation-mb
+
+= containers * RAM-per-container
+
+4096
+
+mapred-site.xml
+
+mapreduce.map.memory.mb
+
+= RAM-per-container
+
+1024
+
+mapred-site.xml        
+
+mapreduce.reduce.memory.mb
+
+= 2 * RAM-per-container
+
+2048
+
+mapred-site.xml
+
+mapreduce.map.java.opts
+
+= 0.8 * RAM-per-container
+
+819
+
+mapred-site.xml
+
+mapreduce.reduce.java.opts
+
+= 0.8 * 2 * RAM-per-container
+
+1638
+
+yarn-site.xml (check)
+
+yarn.app.mapreduce.am.resource.mb
+
+= 2 * RAM-per-container
+
+2048
+
+yarn-site.xml (check)
+
+yarn.app.mapreduce.am.command-opts
+
+= 0.8 * 2 * RAM-per-container
+
+1638
+
+tez-site.xml  
+
+tez.am.resource.memory.mb  
+
+= RAM-per-container
+
+1024
+
+tez-site.xml  
+
+tez.am.java.opts  
+
+= 0.8 * RAM-per-container
+
+819
+
+tez-site.xml  
+
+hive.tez.container.size  
+
+= RAM-per-container
+
+1024
+
+tez-site.xml  
+
+hive.tez.java.opts  
+
+= 0.8 * RAM-per-container
+
+819
+
+ 
+
+
+ 
+
+允许磁盘有多少个坏的
+
+   <property>
+       <name>dfs.datanode.failed.volumes.tolerated</name>
+       <value>1</value>
+   </property>
